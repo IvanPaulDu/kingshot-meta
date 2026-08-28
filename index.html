@@ -13,10 +13,21 @@
       <span>Puntos: <strong id="score">0</strong></span>
       <span>Récord: <strong id="highscore">0</strong></span>
     </div>
-    <canvas id="board" width="400" height="400"></canvas>
-    <p class="hint">Usa las flechas o WASD para moverte. Pulsa Espacio para pausar/reiniciar.</p>
-    <div id="overlay" class="overlay">
-      <p id="overlay-text">Pulsa una flecha para empezar</p>
+    <div class="board-wrap">
+      <canvas id="board" width="400" height="400"></canvas>
+      <div id="overlay" class="overlay">
+        <p id="overlay-text">Pulsa una flecha o toca la pantalla para empezar</p>
+      </div>
+    </div>
+    <p class="hint">Flechas/WASD, desliza el dedo, o usa los botones. Espacio o toque largo para pausar.</p>
+
+    <div class="dpad">
+      <button class="dpad-btn dpad-up" data-dir="up" aria-label="Arriba">▲</button>
+      <div class="dpad-row">
+        <button class="dpad-btn dpad-left" data-dir="left" aria-label="Izquierda">◀</button>
+        <button class="dpad-btn dpad-down" data-dir="down" aria-label="Abajo">▼</button>
+        <button class="dpad-btn dpad-right" data-dir="right" aria-label="Derecha">▶</button>
+      </div>
     </div>
   </div>
   <script src="script.js"></script>

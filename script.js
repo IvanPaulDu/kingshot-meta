@@ -162,4 +162,75 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
+function applyDirection(newDir) {
+  const isOpposite = newDir.x === -direction.x && newDir.y === -direction.y;
+  if (!isOpposite) {
+    nextDirection = newDir;
+  }
+  if (!running && !gameOver) {
+    startGame();
+  } else if (gameOver) {
+    resetGame();
+    startGame();
+  }
+}
+
+document.querySelectorAll(".dpad-btn").forEach((btn) => {
+  btn.addEventListener(
+    "touchstart",
+    (e) => {
+      e.preventDefault();
+      applyDirection(KEY_DIRECTIONS[{ up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight" }[btn.dataset.dir]]);
+    },
+    { passive: false }
+  );
+  btn.addEventListener("click", () => {
+    applyDirection(KEY_DIRECTIONS[{ up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight" }[btn.dataset.dir]]);
+  });
+});
+
+let touchStart = null;
+const boardWrap = document.querySelector(".board-wrap");
+
+boardWrap.addEventListener(
+  "touchstart",
+  (e) => {
+    const t = e.changedTouches[0];
+    touchStart = { x: t.clientX, y: t.clientY, time: Date.now() };
+  },
+  { passive: true }
+);
+
+boardWrap.addEventListener(
+  "touchend",
+  (e) => {
+    if (!touchStart) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - touchStart.x;
+    const dy = t.clientY - touchStart.y;
+    const dt = Date.now() - touchStart.time;
+    const absX = Math.abs(dx);
+    const absY = Math.abs(dy);
+    const SWIPE_THRESHOLD = 24;
+
+    if (absX < SWIPE_THRESHOLD && absY < SWIPE_THRESHOLD) {
+      if (gameOver) {
+        resetGame();
+        startGame();
+      } else if (running) {
+        if (dt > 400) pauseGame();
+      } else {
+        startGame();
+      }
+    } else if (absX > absY) {
+      applyDirection(dx > 0 ? { x: 1, y: 0 } : { x: -1, y: 0 });
+    } else {
+      applyDirection(dy > 0 ? { x: 0, y: 1 } : { x: 0, y: -1 });
+    }
+
+    touchStart = null;
+  },
+  { passive: true }
+);
+
 resetGame();

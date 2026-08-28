@@ -110,3 +110,47 @@ canvas {
     display: none;
   }
 }
+
+.tilt-controls {
+  margin: 16px auto 0;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.tilt-btn,
+.calibrate-btn {
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid #3a4149;
+  background: #2c333a;
+  color: #f0f0f0;
+  font-size: 0.85rem;
+  font-family: inherit;
+  touch-action: manipulation;
+}
+
+.tilt-btn.active {
+  background: #4caf50;
+  color: #0f1215;
+  border-color: #4caf50;
+}
+
+.tilt-btn:active,
+.calibrate-btn:active {
+  filter: brightness(1.15);
+}
+
+.calibrate-btn.hidden {
+  display: none;
+}
+
+.tilt-status {
+  min-height: 1.1em;
+  margin: 0;
+  font-size: 0.8rem;
+  color: #9aa4ad;
+}

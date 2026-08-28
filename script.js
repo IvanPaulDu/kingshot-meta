@@ -233,4 +233,92 @@ boardWrap.addEventListener(
   { passive: true }
 );
 
+const tiltBtn = document.getElementById("tilt-btn");
+const calibrateBtn = document.getElementById("calibrate-btn");
+const tiltStatus = document.getElementById("tilt-status");
+
+const TILT_THRESHOLD = 12; // grados desde el centro para disparar un giro
+let tiltEnabled = false;
+let tiltBaseline = null;
+
+function handleTilt(event) {
+  if (event.beta === null || event.gamma === null) return;
+
+  if (!tiltBaseline) {
+    tiltBaseline = { beta: event.beta, gamma: event.gamma };
+    return;
+  }
+
+  const dBeta = event.beta - tiltBaseline.beta; // adelante/atrás
+  const dGamma = event.gamma - tiltBaseline.gamma; // izquierda/derecha
+  const absBeta = Math.abs(dBeta);
+  const absGamma = Math.abs(dGamma);
+
+  if (Math.max(absBeta, absGamma) < TILT_THRESHOLD) return;
+
+  const newDir =
+    absGamma > absBeta
+      ? dGamma > 0
+        ? { x: 1, y: 0 }
+        : { x: -1, y: 0 }
+      : dBeta > 0
+      ? { x: 0, y: 1 }
+      : { x: 0, y: -1 };
+
+  applyDirection(newDir);
+}
+
+function enableTilt() {
+  tiltEnabled = true;
+  tiltBaseline = null;
+  window.addEventListener("deviceorientation", handleTilt);
+  tiltBtn.textContent = "📱 Desactivar control por inclinación";
+  tiltBtn.classList.add("active");
+  calibrateBtn.classList.remove("hidden");
+  tiltStatus.textContent = "Sostén el celular cómodo y pulsa \"Recalibrar centro\"";
+}
+
+function disableTilt() {
+  tiltEnabled = false;
+  tiltBaseline = null;
+  window.removeEventListener("deviceorientation", handleTilt);
+  tiltBtn.textContent = "📱 Activar control por inclinación";
+  tiltBtn.classList.remove("active");
+  calibrateBtn.classList.add("hidden");
+  tiltStatus.textContent = "";
+}
+
+tiltBtn.addEventListener("click", () => {
+  if (tiltEnabled) {
+    disableTilt();
+    return;
+  }
+
+  if (typeof DeviceOrientationEvent === "undefined") {
+    tiltStatus.textContent = "Tu dispositivo no soporta el sensor de inclinación";
+    return;
+  }
+
+  if (typeof DeviceOrientationEvent.requestPermission === "function") {
+    DeviceOrientationEvent.requestPermission()
+      .then((state) => {
+        if (state === "granted") {
+          enableTilt();
+        } else {
+          tiltStatus.textContent = "Permiso de sensores denegado";
+        }
+      })
+      .catch(() => {
+        tiltStatus.textContent = "No se pudo acceder al sensor de inclinación";
+      });
+  } else {
+    enableTilt();
+  }
+});
+
+calibrateBtn.addEventListener("click", () => {
+  tiltBaseline = null;
+  tiltStatus.textContent = "Centrado. ¡Inclina para moverte!";
+});
+
 resetGame();

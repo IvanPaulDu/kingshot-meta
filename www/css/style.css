@@ -1,0 +1,86 @@
+/* Envoltura móvil: pantalla completa, sin scroll ni gestos del navegador. */
+
+:root {
+  --ink: #14171d;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--ink);
+  overscroll-behavior: none;
+  touch-action: none;
+  font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+body {
+  /* Respeta el notch / barras de gestos en pantalla completa. */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+           env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+#game-root {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#game-root canvas {
+  display: block;
+  /* El lienzo es de 320x480 y Phaser (Scale.FIT) lo escala por CSS; el
+     suavizado del navegador es lo que mejor sienta a estos gráficos. */
+  touch-action: none;
+}
+
+/* Aviso de orientación: el juego es 320x480 en vertical. */
+#rotate {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: var(--ink);
+  color: #fff;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  text-align: center;
+  font-size: 16px;
+  line-height: 1.5;
+  letter-spacing: 0.04em;
+}
+
+.rotate-icon {
+  width: 54px;
+  height: 86px;
+  border: 4px solid #fff;
+  border-radius: 10px;
+  animation: tilt 1.8s ease-in-out infinite;
+}
+
+@keyframes tilt {
+  0%, 40% { transform: rotate(90deg); }
+  60%, 100% { transform: rotate(0deg); }
+}
+
+body.landscape #rotate {
+  display: flex;
+}
+
+body.landscape #game-root {
+  visibility: hidden;
+}

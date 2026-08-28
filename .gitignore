@@ -1,0 +1,20 @@
+node_modules/
+.smoke/
+
+# Android: artefactos de compilación y secretos de firma
+android/.gradle/
+android/build/
+android/app/build/
+android/capacitor-cordova-android-plugins/build/
+android/local.properties
+android/keystore.properties
+android/*.jks
+android/*.keystore
+
+# Assets web sincronizados por Capacitor (se regeneran con `cap sync`)
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+
+.DS_Store
+*.log

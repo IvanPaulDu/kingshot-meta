@@ -1,0 +1,14 @@
+{
+  "appId": "com.coreanodecalle.selektor",
+  "appName": "Selektor",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "backgroundColor": "#14171dff",
+    "allowMixedContent": false,
+    "captureInput": false,
+    "webContentsDebuggingEnabled": false
+  }
+}

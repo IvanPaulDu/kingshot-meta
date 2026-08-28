@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Selektor</string>
+    <string name="title_activity_main">Selektor</string>
+    <string name="package_name">com.coreanodecalle.selektor</string>
+    <string name="custom_url_scheme">com.coreanodecalle.selektor</string>
+</resources>

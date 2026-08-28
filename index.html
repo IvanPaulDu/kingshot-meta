@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Snake - Juego Sencillo</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="game-container">
+    <h1>🐍 Snake</h1>
+    <div class="hud">
+      <span>Puntos: <strong id="score">0</strong></span>
+      <span>Récord: <strong id="highscore">0</strong></span>
+    </div>
+    <canvas id="board" width="400" height="400"></canvas>
+    <p class="hint">Usa las flechas o WASD para moverte. Pulsa Espacio para pausar/reiniciar.</p>
+    <div id="overlay" class="overlay">
+      <p id="overlay-text">Pulsa una flecha para empezar</p>
+    </div>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>

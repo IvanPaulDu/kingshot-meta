@@ -1,5 +1,6 @@
 node_modules/
 .smoke/
+dist/
 
 # Android: artefactos de compilación y secretos de firma
 android/.gradle/

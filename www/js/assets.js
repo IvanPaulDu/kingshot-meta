@@ -490,69 +490,6 @@
     };
     tex(scene, 'bocina_on', 48, 48, speaker(true));
     tex(scene, 'bocina_off', 48, 48, speaker(false));
-
-    // --- botón de información
-    tex(scene, 'info_button', 48, 48, function (ctx, w, h) {
-      var cx = w / 2, cy = h / 2;
-      ctx.beginPath();
-      ctx.arc(cx, cy, cx - 2, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255,255,255,0.92)';
-      ctx.fill();
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = INK;
-      ctx.stroke();
-      centeredText(ctx, 'i', cx, cy + 1, 'bold 26px Georgia,serif', INK);
-    });
-
-    // --- panel "acerca de"
-    tex(scene, 'info_about', 280, 212, function (ctx, w, h) {
-      roundRect(ctx, 3, 3, w - 6, h - 6, 20);
-      ctx.fillStyle = 'rgba(20,23,29,0.96)';
-      ctx.fill();
-      ctx.lineWidth = 4;
-      ctx.strokeStyle = '#ffffff';
-      ctx.stroke();
-      centeredText(ctx, 'SELEKTOR', w / 2, 42, 'bold 26px ' + FONT_STACK, '#ffffff');
-      centeredText(ctx, 'Rebota la bola hacia la pared', w / 2, 72, '13px ' + FONT_STACK, 'rgba(255,255,255,0.88)');
-      centeredText(ctx, 'que tenga su mismo color.', w / 2, 91, '13px ' + FONT_STACK, 'rgba(255,255,255,0.88)');
-      centeredText(ctx, 'Gráficos y música generados por código', w / 2, 112, '11px ' + FONT_STACK, 'rgba(255,255,255,0.6)');
-      ctx.save();
-      ctx.font = 'bold 13px ' + FONT_STACK;
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = 'rgba(255,255,255,0.85)';
-      ctx.fillText('SÍGUENOS', 26, 136);
-      ctx.restore();
-      centeredText(ctx, 'coreanodecalle', w / 2, 186, '12px ' + FONT_STACK, 'rgba(255,255,255,0.45)');
-    });
-
-    tex(scene, 'fb_button', 33, 33, function (ctx, w, h) {
-      roundRect(ctx, 0, 0, w, h, 8);
-      ctx.fillStyle = '#1877f2';
-      ctx.fill();
-      centeredText(ctx, 'f', w / 2, h / 2 + 1, 'bold 24px Georgia,serif', '#ffffff');
-    });
-
-    tex(scene, 'insta_button', 33, 33, function (ctx, w, h) {
-      var g = ctx.createLinearGradient(0, h, w, 0);
-      g.addColorStop(0, '#f9ce34');
-      g.addColorStop(0.5, '#ee2a7b');
-      g.addColorStop(1, '#6228d7');
-      roundRect(ctx, 0, 0, w, h, 8);
-      ctx.fillStyle = g;
-      ctx.fill();
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 2.4;
-      roundRect(ctx, 7, 7, w - 14, h - 14, 6);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(w / 2, h / 2, 4.6, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(w - 10.5, 10.5, 1.3, 0, Math.PI * 2);
-      ctx.fillStyle = '#ffffff';
-      ctx.fill();
-    });
   }
 
   // ---------------------------------------------------------------------

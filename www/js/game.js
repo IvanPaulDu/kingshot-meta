@@ -37,7 +37,6 @@ gameScene.init = function(){
   velocidadY=0;
   onTutorial=0;
   musicStatus=1;
-  muestraAbout=false;
   muestraAjustes=false;
   esperandoSaque=false;
   rebotePala=false;
@@ -67,24 +66,9 @@ gameScene.create = function(){
     bocinaOn=this.add.image(1000,1000,'bocina_on').setInteractive();
     bocinaOff=this.add.image(1000,1000,'bocina_off').setInteractive();
     escenaMenu=this;
-    infoButton=this.add.image(1000,1000,'info_button').setInteractive();
     ajustesButton=this.add.image(1000,1000,'ajustes_button').setInteractive();
     ajustesButton.x=(ajustesButton.width/2)+5+52;
     ajustesButton.y=this.sys.game.config.height-(ajustesButton.height/2)-5;
-    infoButton.x=this.sys.game.config.width-(infoButton.width/2)-3;
-    infoButton.y=this.sys.game.config.height-(infoButton.height/2)-3;
-    infoAbout=this.add.image(0,0,'info_about').setOrigin(0,0);
-    fbButton=this.add.image(0,0,'fb_button');
-    fbButton.x=(infoAbout.width/2)+35;
-    fbButton.y=(infoAbout.height/2)+35;
-    instaButton=this.add.image(0,0,'insta_button');
-    instaButton.x=fbButton.x+(fbButton.width*1.4);
-    instaButton.y=fbButton.y;
-    grupoAbout=this.add.container(center_width-(infoAbout.width/2),center_height-(infoAbout.height/2),[infoAbout,fbButton,instaButton]);
-    grupoAbout.setAlpha(0);
-    fbButton.on('pointerup',()=>{window.open("http://www.facebook.com/coreanodecalle","_blank");});
-    instaButton.on('pointerup',()=>{window.open("http://www.instagram.com/coreanodecalle","_blank");});
-
     if(bgMusic==0){
     bgMusic=this.sound.add('bg_music');
     musicConf={
@@ -130,53 +114,12 @@ gameScene.create = function(){
       aplicarAudioMusica();
     });
 
-    infoButton.on('pointerdown',function(){
-      this.scene.tweens.add({
-        targets:infoButton,
-        scaleX:0.9,
-        scaleY:0.9,
-        duration:60,
-        yoyo:true
-      });
-      muestraAbout=!muestraAbout;
-      if(muestraAbout){
-        startButton.disableInteractive();
-        this.scene.tweens.add({
-          targets: startButton,
-          alpha: 0,
-          duration: 100
-        });
-        this.scene.tweens.add({
-          targets:grupoAbout,
-          alpha:1,
-          duration:100
-        });
-        fbButton.setInteractive();
-        instaButton.setInteractive();}
-      else{
-        fbButton.disableInteractive();
-        instaButton.disableInteractive();
-        this.scene.tweens.add({
-          targets: startButton,
-          alpha: 1,
-          duration: 100
-        });
-        this.scene.tweens.add({
-          targets:grupoAbout,
-          alpha:0,
-          duration:100
-        });
-        startButton.setInteractive();
-      };
-    });
-
     //Un solo camino de arranque para el botón START y para "ver tutorial".
     arrancarPartida=function(){
       startButton.destroy();
       titulo.destroy();
       bocinaOn.destroy();
       bocinaOff.destroy();
-      infoButton.destroy();
       ajustesButton.destroy();
       currentState=3;
       if(bestScore<4||tutorialForzado){onTutorial=1;}
@@ -211,7 +154,7 @@ gameScene.create = function(){
       },
       onToggle:function(abierto){
         muestraAjustes=abierto;
-        var otros=[titulo,startButton,infoButton,ajustesButton,bocinaOn,bocinaOff];
+        var otros=[titulo,startButton,ajustesButton,bocinaOn,bocinaOff];
         if(bestScore>0&&copa){otros.push(copa,scoreEnMenu);}
         otros.forEach(function(o){
           if(!o||!o.scene){return;}
@@ -220,7 +163,6 @@ gameScene.create = function(){
         });
         if(!abierto){
           startButton.setInteractive();
-          infoButton.setInteractive();
           ajustesButton.setInteractive();
           bocinaOn.setInteractive();
           bocinaOff.setInteractive();

@@ -71,13 +71,11 @@ y el cuerpo físico de la bola sale de `setCircle()` (radio = ancho/2).
 | `destello` | 64×44 | Chispazo de cuatro puntas al puntuar; se tiñe |
 | `aviso_saque` | 240×52 | «TOCA PARA EMPEZAR» |
 | `particula_estrella` | 24×24 | Partículas del choque |
-| `bocina_on/off`, `info_button`, `ajustes_button` | 48×48 | |
+| `bocina_on/off`, `ajustes_button` | 48×48 | |
 | `ui_panel` | 296×352 | Fondo del menú de ajustes |
 | `ui_track`, `ui_knob` | 232×12, 28×28 | Deslizadores (el relleno se recorta) |
 | `ui_boton` | 200×42 | Botones del panel |
 | `ui_switch_on/off`, `ui_switch_knob` | 62×32, 24×24 | Interruptor |
-| `info_about` | 280×212 | Panel con hueco para los botones sociales |
-| `fb_button`, `insta_button` | 33×33 | El original usaba `f_logo_33.png` |
 | `score_font` | 340×48 | 10 dígitos en celdas de 34×48 |
 
 `tutorial_back` es un degradado sin texto a propósito: el juego reutiliza la misma
@@ -194,6 +192,15 @@ Detalles que no se ven en la tabla:
 Todo se guarda en el mismo registro `selektorFile` de localStorage. Los
 registros antiguos, que solo tenían `bestScore` y `musicStatus`, se siguen
 leyendo: los ajustes que falten toman su valor por omisión.
+
+## Funciones del original que se retiraron
+
+El botón de información de la esquina inferior derecha y su panel «acerca de»
+se eliminaron a petición: con ellos se fueron las texturas `info_button`,
+`info_about`, `fb_button` e `insta_button`, y las dos únicas llamadas a
+`window.open()` que tenía el juego (los enlaces a Facebook e Instagram). La
+esquina inferior derecha queda libre; la bocina y el engranaje siguen en la
+izquierda.
 
 ## Cambios respecto al `game.js` original
 

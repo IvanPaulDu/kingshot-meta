@@ -22,8 +22,8 @@ const TEXTURE_KEYS = [
   'titulo', 'pala', 'pala_sombra', 'bola', 'bola_sombra', 'flecha_derecha',
   'flecha_izquierda', 'pared_derecha', 'pared_izquierda', 'particula_estrella',
   'start_button', 'destello', 'copa', 'cierre_final', 'smash_button',
-  'tutorial_back', 'flecha_tuto', 'bocina_on', 'bocina_off', 'info_button',
-  'info_about', 'fb_button', 'insta_button', 'score_font', 'aviso_saque'
+  'tutorial_back', 'flecha_tuto', 'bocina_on', 'bocina_off',
+  'score_font', 'aviso_saque'
 ];
 const AUDIO_KEYS = ['drop', 'crash_sound', 'bounce_sound', 'bg_music'];
 
@@ -193,14 +193,12 @@ const peek = (page) => page.evaluate(() => {
   check(page.errors.length === 0, 'sin errores de consola', page.errors.join(' | '));
   await page.screenshot({ path: path.join(SHOTS, '01-menu.png') });
 
-  // Panel "acerca de"
-  await tapObj(page, 'infoButton');
-  await sleep(400);
-  const aboutAlpha = await page.evaluate(() => window.grupoAbout.alpha);
-  check(aboutAlpha > 0.9, 'el botón de info abre el panel', 'alpha=' + aboutAlpha);
-  await page.screenshot({ path: path.join(SHOTS, '02-about.png') });
-  await tapObj(page, 'infoButton');
-  await sleep(400);
+  // La esquina inferior derecha tiene que quedar libre: se retiró el botón de
+  // información junto con su panel.
+  const sobrantes = await page.evaluate(() => ['infoButton', 'infoAbout', 'fbButton',
+    'instaButton', 'grupoAbout'].filter((n) => window[n] !== undefined));
+  check(sobrantes.length === 0, 'no queda rastro del panel de información',
+    sobrantes.join(','));
 
   // Silenciar / reactivar
   await tapObj(page, 'bocinaOn');

@@ -17,6 +17,7 @@ www/                      La app web que se empaqueta
   css/style.css           Estilos responsivos, safe-area, aviso de orientación
   js/phaser.min.js        Phaser 3.20.1 (el mismo build que usaba el original)
   js/assets.js            Generación procedural de texturas, fuente y sonidos
+  js/settings.js          Ajustes persistentes y su menú (deslizadores, interruptor)
   js/game.js              El game.js original, con el preload sustituido
   js/mobile.js            Gestos, orientación, desbloqueo de audio, botón atrás
 android/                  Proyecto nativo generado por Capacitor
@@ -69,7 +70,11 @@ y el cuerpo físico de la bola sale de `setCircle()` (radio = ancho/2).
 | `flecha_tuto` | 160×160 | Arco de giro; envuelve la pala sin taparla |
 | `destello` | 160×40 | Se tiñe del color de la bola al puntuar |
 | `particula_estrella` | 24×24 | Partículas del choque |
-| `bocina_on/off`, `info_button` | 48×48 | |
+| `bocina_on/off`, `info_button`, `ajustes_button` | 48×48 | |
+| `ui_panel` | 296×352 | Fondo del menú de ajustes |
+| `ui_track`, `ui_knob` | 232×12, 28×28 | Deslizadores (el relleno se recorta) |
+| `ui_boton` | 200×42 | Botones del panel |
+| `ui_switch_on/off`, `ui_switch_knob` | 62×32, 24×24 | Interruptor |
 | `info_about` | 280×212 | Panel con hueco para los botones sociales |
 | `fb_button`, `insta_button` | 33×33 | El original usaba `f_logo_33.png` |
 | `score_font` | 340×48 | 10 dígitos en celdas de 34×48 |
@@ -103,6 +108,41 @@ PNG: `ic_launcher`, `ic_launcher_round` e `ic_launcher_foreground` (icono adapta
 contenido dentro de la zona segura del 66 %) en las cinco densidades, más el
 logotipo del splash. `drawable/splash.xml` lo compone sobre el color de marca.
 
+## Menú de ajustes
+
+El engranaje del menú principal (junto a la bocina) abre un panel con:
+
+| Ajuste | Rango | Efecto |
+|---|---|---|
+| Música | 0–100 % en pasos del 5 % | Volumen del bucle de fondo, en vivo |
+| Efectos | 0–100 % en pasos del 5 % | Volumen de rebote, acierto y choque |
+| Velocidad | 5 pasos, de «Muy lenta» a «Muy rápida» | 0,70× a 1,30× |
+| Invertir controles | Sí / no | Intercambia los dos botones de giro |
+| VER TUTORIAL | — | Repite el tutorial cuando se quiera |
+
+Detalles que no se ven en la tabla:
+
+- **Música y bocina son el mismo valor.** El icono de la bocina refleja si el
+  volumen es mayor que cero, y al pulsarlo se silencia recordando el nivel
+  anterior para restaurarlo. Bajar el deslizador a 0 % apaga el icono.
+- **Los efectos suenan mientras se ajustan**: al mover el deslizador se
+  reproduce el sonido de acierto al volumen elegido.
+- **La velocidad escala `engine.timing.timeScale` de Matter**, así que afecta
+  por igual a la caída, al rebote y al recorrido hasta la pared, sin tocar la
+  progresión de dificultad original (`velocidadY += 0.2` por punto).
+- **Al invertir los controles se intercambian la función y el icono** de los dos
+  botones: el de la izquierda pasa a mostrar «→» y a desviar la bola hacia la
+  derecha. Así el jugador sigue viendo hacia dónde saldrá la bola, y quien
+  prefiera ese gesto bajo el otro pulgar puede cambiarlo. El teclado sigue la
+  misma inversión y los tutoriales resaltan el botón que toca en cada caso.
+- **El tutorial a demanda encadena sus dos partes** (desviar a la derecha y
+  luego a la izquierda) aunque el récord esté muy por encima del umbral de 4
+  puntos con el que aparece automáticamente la primera vez.
+
+Todo se guarda en el mismo registro `selektorFile` de localStorage. Los
+registros antiguos, que solo tenían `bestScore` y `musicStatus`, se siguen
+leyendo: los ajustes que falten toman su valor por omisión.
+
 ## Cambios respecto al `game.js` original
 
 La lógica de juego —física, estados, puntuación, colores, rotación de la pala,
@@ -120,6 +160,12 @@ para que funcione sin ficheros externos y en un teléfono:
    config, manteniendo `mode: FIT`. El lienzo sigue siendo de 320×480.
 4. **`window.game = game`** al final del fichero: `let` no crea propiedad en
    `window`, y la envoltura móvil necesita la instancia.
+5. **Ajustes** (añadido posterior): `loadFile`/`saveFile` delegan en
+   `SelektorSettings`, el arranque de partida se extrae a `arrancarPartida()`
+   para que lo compartan START y «VER TUTORIAL», los dos botones de giro se
+   crean a partir de `invertControls`, y la condición del segundo tutorial pasa
+   a `((bestScore<4)||tutorialForzado)`. La lógica de física, puntuación,
+   colores y colisiones sigue intacta.
 
 ## Configuración de Android
 

@@ -520,6 +520,108 @@
   }
 
   // ---------------------------------------------------------------------
+  // Texturas del menú de ajustes
+  // ---------------------------------------------------------------------
+
+  function buildUiTextures(scene) {
+
+    // --- botón de engranaje que abre los ajustes
+    tex(scene, 'ajustes_button', 48, 48, function (ctx, w, h) {
+      var cx = w / 2, cy = h / 2;
+      ctx.beginPath();
+      ctx.arc(cx, cy, cx - 2, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.92)';
+      ctx.fill();
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = INK;
+      ctx.stroke();
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.fillStyle = INK;
+      for (var i = 0; i < 8; i++) {          // dientes
+        ctx.save();
+        ctx.rotate((Math.PI * 2 * i) / 8);
+        roundRect(ctx, -2.6, -15, 5.2, 6, 1.5);
+        ctx.fill();
+        ctx.restore();
+      }
+      ctx.beginPath();
+      ctx.arc(0, 0, 9.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.beginPath();
+      ctx.arc(0, 0, 4.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    });
+
+    // --- panel de fondo del menú de ajustes
+    tex(scene, 'ui_panel', 296, 352, function (ctx, w, h) {
+      roundRect(ctx, 3, 3, w - 6, h - 6, 22);
+      ctx.fillStyle = 'rgba(20,23,29,0.97)';
+      ctx.fill();
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = '#ffffff';
+      ctx.stroke();
+    });
+
+    // --- carril del deslizador; se tiñe y se recorta para pintar el relleno
+    tex(scene, 'ui_track', 232, 12, function (ctx, w, h) {
+      roundRect(ctx, 0, 0, w, h, h / 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+    });
+
+    // --- tirador del deslizador
+    tex(scene, 'ui_knob', 28, 28, function (ctx, w, h) {
+      var r = w / 2;
+      ctx.beginPath();
+      ctx.arc(r, r, r - 3, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.lineWidth = 3.5;
+      ctx.strokeStyle = INK;
+      ctx.stroke();
+    });
+
+    // --- botón genérico del panel (el rótulo se dibuja con texto encima)
+    tex(scene, 'ui_boton', 200, 42, function (ctx, w, h) {
+      roundRect(ctx, 2.5, 2.5, w - 5, h - 5, (h - 5) / 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.1)';
+      ctx.fill();
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = '#ffffff';
+      ctx.stroke();
+    });
+
+    // --- interruptor de dos estados
+    var swi = function (on) {
+      return function (ctx, w, h) {
+        roundRect(ctx, 1.5, 1.5, w - 3, h - 3, (h - 3) / 2);
+        ctx.fillStyle = on ? PAL.green : 'rgba(255,255,255,0.16)';
+        ctx.fill();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = on ? '#ffffff' : 'rgba(255,255,255,0.55)';
+        ctx.stroke();
+      };
+    };
+    tex(scene, 'ui_switch_off', 62, 32, swi(false));
+    tex(scene, 'ui_switch_on', 62, 32, swi(true));
+
+    tex(scene, 'ui_switch_knob', 24, 24, function (ctx, w, h) {
+      var r = w / 2;
+      ctx.beginPath();
+      ctx.arc(r, r, r - 1.5, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'rgba(35,38,45,0.5)';
+      ctx.stroke();
+    });
+  }
+
+  // ---------------------------------------------------------------------
   // Fuente bitmap (RetroFont) para el marcador
   // ---------------------------------------------------------------------
 
@@ -758,6 +860,7 @@
     palette: PAL_LIST,
     generate: function (scene) {
       buildTextures(scene);
+      buildUiTextures(scene);
       buildFont(scene);
       buildAudio(scene);
     }

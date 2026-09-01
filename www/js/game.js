@@ -3,6 +3,10 @@ let gameScene = new Phaser.Scene('Game');
 newBest=false;
 bgMusic=0;
 musicConf=null;
+//Tutorial lanzado a mano desde los ajustes (se repite tantas veces como haga falta)
+tutorialForzado=false;
+panelAjustes=null;
+volumenMusicaPrevio=0.8;
 
 // initiate scene parameters
 gameScene.init = function(){
@@ -34,6 +38,7 @@ gameScene.init = function(){
   onTutorial=0;
   musicStatus=1;
   muestraAbout=false;
+  muestraAjustes=false;
   rebotePala=false;
   this.loadFile();
 };
@@ -60,7 +65,11 @@ gameScene.create = function(){
     startButton=this.add.image(center_width,center_height,'start_button').setInteractive();
     bocinaOn=this.add.image(1000,1000,'bocina_on').setInteractive();
     bocinaOff=this.add.image(1000,1000,'bocina_off').setInteractive();
+    escenaMenu=this;
     infoButton=this.add.image(1000,1000,'info_button').setInteractive();
+    ajustesButton=this.add.image(1000,1000,'ajustes_button').setInteractive();
+    ajustesButton.x=(ajustesButton.width/2)+5+52;
+    ajustesButton.y=this.sys.game.config.height-(ajustesButton.height/2)-5;
     infoButton.x=this.sys.game.config.width-(infoButton.width/2)-3;
     infoButton.y=this.sys.game.config.height-(infoButton.height/2)-3;
     infoAbout=this.add.image(0,0,'info_about').setOrigin(0,0);
@@ -79,39 +88,45 @@ gameScene.create = function(){
     bgMusic=this.sound.add('bg_music');
     musicConf={
       mute:false,
-      volume:1,
+      volume:SelektorSettings.values.musicVolume,
       rate:1,
       detune:0,
       seek:0,
       loop: true,
       delay:0
     }
-    bgMusic.play(musicConf);
   }
-    if (musicStatus==1){
-      bocinaOn.x=(bocinaOn.width/2)+5;
-      bocinaOn.y=(this.sys.game.config.height-(bocinaOn.height/2))-5;
-//      bgMusic.play(musicConf);
-    }else{
-      bocinaOff.x=(bocinaOff.width/2)+5;
-      bocinaOff.y=(this.sys.game.config.height-(bocinaOn.height/2))-5;
-      bgMusic.stop();
-    }
+    //La bocina y el deslizador de música manejan el mismo valor: el icono
+    //refleja si el volumen es mayor que cero.
+    aplicarAudioMusica=function(){
+      var vol=SelektorSettings.values.musicVolume;
+      musicStatus=vol>0?1:0;
+      musicConf.volume=vol;
+      bgMusic.setVolume(vol);
+      if(musicStatus==1){
+        if(!bgMusic.isPlaying){bgMusic.play(musicConf);}
+        bocinaOn.x=(bocinaOn.width/2)+5;
+        bocinaOn.y=(game.config.height-(bocinaOn.height/2))-5;
+        bocinaOff.x=1000;
+      }else{
+        bgMusic.stop();
+        bocinaOff.x=(bocinaOff.width/2)+5;
+        bocinaOff.y=(game.config.height-(bocinaOff.height/2))-5;
+        bocinaOn.x=1000;
+      }
+    };
+    aplicarAudioMusica();
+
     bocinaOn.on('pointerup',function(){
-      bocinaOn.x=1000;
-      bocinaOff.x=(bocinaOff.width/2)+5;
-      bocinaOff.y=(game.config.height-(bocinaOn.height/2))-5;
-      bgMusic.stop();
-      musicStatus=0;
-      this.scene.saveFile();
+      volumenMusicaPrevio=SelektorSettings.values.musicVolume||0.8;
+      SelektorSettings.values.musicVolume=0;
+      SelektorSettings.save();
+      aplicarAudioMusica();
     });
     bocinaOff.on('pointerup',function(){
-      bocinaOff.x=1000;
-      bocinaOn.x=(bocinaOn.width/2)+5;
-      bocinaOn.y=(game.config.height-(bocinaOn.height/2))-5;
-      bgMusic.play(musicConf);
-      musicStatus=1;
-      this.scene.saveFile();
+      SelektorSettings.values.musicVolume=volumenMusicaPrevio||0.8;
+      SelektorSettings.save();
+      aplicarAudioMusica();
     });
 
     infoButton.on('pointerdown',function(){
@@ -154,6 +169,18 @@ gameScene.create = function(){
       };
     });
 
+    //Un solo camino de arranque para el botón START y para "ver tutorial".
+    arrancarPartida=function(){
+      startButton.destroy();
+      titulo.destroy();
+      bocinaOn.destroy();
+      bocinaOff.destroy();
+      infoButton.destroy();
+      ajustesButton.destroy();
+      currentState=3;
+      if(bestScore<4||tutorialForzado){onTutorial=1;}
+    };
+
     startButton.once('pointerup',function(){
           this.scene.tweens.add(
               {
@@ -162,19 +189,47 @@ gameScene.create = function(){
                   scaleY: 0.9,
                   duration: 100,
                   yoyo: true,
-                  onComplete: ()=>{
-                    startButton.destroy();
-                    titulo.destroy();
-                    bocinaOn.destroy();
-                    bocinaOff.destroy();
-                    infoButton.destroy();
-                    currentState=3;
-                    if(bestScore<4){onTutorial=1;}
-                  },
+                  onComplete: arrancarPartida,
               }
           );
         }
       );
+
+    //Panel de ajustes: volúmenes, velocidad, controles y acceso al tutorial.
+    previewSfx=this.sound.add('drop');
+    panelAjustes=SelektorSettings.createPanel(this,{
+      onMusicVolume:function(){aplicarAudioMusica();},
+      onSfxVolume:function(v){
+        previewSfx.setVolume(v);
+        if(v>0&&!previewSfx.isPlaying){previewSfx.play();}
+      },
+      onTutorial:function(){
+        tutorialForzado=true;
+        panelAjustes.hide();
+        arrancarPartida();
+      },
+      onToggle:function(abierto){
+        muestraAjustes=abierto;
+        var otros=[titulo,startButton,infoButton,ajustesButton,bocinaOn,bocinaOff];
+        if(bestScore>0&&copa){otros.push(copa,scoreEnMenu);}
+        otros.forEach(function(o){
+          if(!o||!o.scene){return;}
+          escenaMenu.tweens.add({targets:o,alpha:abierto?0:1,duration:120});
+          if(abierto&&o.disableInteractive){o.disableInteractive();}
+        });
+        if(!abierto){
+          startButton.setInteractive();
+          infoButton.setInteractive();
+          ajustesButton.setInteractive();
+          bocinaOn.setInteractive();
+          bocinaOff.setInteractive();
+        }
+      }
+    });
+
+    ajustesButton.on('pointerup',function(){
+      if(panelAjustes.abierto){panelAjustes.hide();}else{panelAjustes.show();}
+    });
     if (bestScore>0)
     {
       copa=this.add.image(center_width,this.sys.game.config.height-90,'copa');
@@ -200,9 +255,13 @@ gameScene.create = function(){
       copa.destroy();
     }
     currentState=1;
-    dropSound=this.sound.add('drop');
-    crashSound=this.sound.add('crash_sound');
-    bounceSound=this.sound.add('bounce_sound');
+    //Velocidad: escala el tiempo de la simulación de Matter, así que afecta
+    //por igual a la caída, al rebote y al recorrido hasta la pared.
+    this.matter.world.engine.timing.timeScale=SelektorSettings.speedFactor();
+    var volEfectos=SelektorSettings.values.sfxVolume;
+    dropSound=this.sound.add('drop',{volume:volEfectos});
+    crashSound=this.sound.add('crash_sound',{volume:volEfectos});
+    bounceSound=this.sound.add('bounce_sound',{volume:volEfectos});
     let configScoreFont = this.cache.json.get('score_font_json');
     this.cache.bitmapFont.add('score_font',Phaser.GameObjects.RetroFont.Parse(this,configScoreFont));
     scoreText=this.add.bitmapText(1000,1000,'score_font',score).setOrigin(0.5,0.5);
@@ -232,34 +291,27 @@ paredIzquierda.setTint(colors[colorIzquierda]);
   palaSombra.setAngle(125);
   pala.setStatic(true);
 
-  derecha=this.add.image(this.sys.game.config.width-60,this.sys.game.config.height-100,'flecha_derecha').setInteractive();
-  derecha.on('pointerdown',function(){
-        pala.setAngle(45);
-        palaSombra.setAngle(45);
-        this.scene.tweens.add(
-            {
-                targets: derecha,
-                scaleX: 0.9,
-                scaleY: 0.9,
-                duration: 50,
-                yoyo: true
-            }
-        );
+  //Controles. `derecha` e `izquierda` son los botones de cada lado de la
+  //pantalla; al invertir los controles intercambian función E icono, de modo
+  //que el jugador sigue viendo hacia dónde saldrá la bola.
+  invertidos=SelektorSettings.values.invertControls;
+  derecha=this.add.image(this.sys.game.config.width-60,this.sys.game.config.height-100,
+      invertidos?'flecha_izquierda':'flecha_derecha').setInteractive();
+  izquierda=this.add.image(60,this.sys.game.config.height-100,
+      invertidos?'flecha_derecha':'flecha_izquierda').setInteractive();
+  //botonPala45 manda la bola a la derecha; botonPala125, a la izquierda.
+  botonPala45=invertidos?izquierda:derecha;
+  botonPala125=invertidos?derecha:izquierda;
+
+  var conectaGiro=function(escena,boton,angulo){
+    boton.on('pointerdown',function(){
+      pala.setAngle(angulo);
+      palaSombra.setAngle(angulo);
+      escena.tweens.add({targets:boton,scaleX:0.9,scaleY:0.9,duration:50,yoyo:true});
     });
-  izquierda=this.add.image(60,this.sys.game.config.height-100,'flecha_izquierda').setInteractive();
-  izquierda.on('pointerdown',function(){
-        pala.setAngle(125);
-        palaSombra.setAngle(125);
-        this.scene.tweens.add(
-            {
-                targets: izquierda,
-                scaleX: 0.9,
-                scaleY: 0.9,
-                duration: 50,
-                yoyo: true
-            }
-        );
-    });
+  };
+  conectaGiro(this,botonPala45,45);
+  conectaGiro(this,botonPala125,125);
 
   bola = this.matter.add.image(center_width,10,'bola');
   bola.setDepth(2);
@@ -398,15 +450,17 @@ if (bola.x!=center_width&&rebotePala==0){
           });
 }
 
+  anguloTeclaIzq=invertidos?45:125;
+  anguloTeclaDer=invertidos?125:45;
   if(teclas.left.isDown)
   {
-    pala.setAngle(125);
-    palaSombra.setAngle(125);
+    pala.setAngle(anguloTeclaIzq);
+    palaSombra.setAngle(anguloTeclaIzq);
   }
   else if(teclas.right.isDown)
   {
-    pala.setAngle(45);
-    palaSombra.setAngle(45);
+    pala.setAngle(anguloTeclaDer);
+    palaSombra.setAngle(anguloTeclaDer);
   }
 
   if (bola.y>this.sys.game.config.height+20){
@@ -416,7 +470,7 @@ if (bola.x!=center_width&&rebotePala==0){
   if(onTutorial==1){
     if (bola.body.isStatic==false) {
     this.tweens.add({
-        targets: derecha,
+        targets: botonPala45,
         scaleX: 1.1,
         scaleY: 1.1,
         yoyo: true,
@@ -427,8 +481,8 @@ if (bola.x!=center_width&&rebotePala==0){
       bola.setStatic(true);}
     tutorialBG.x=0;
     tutorialBG.y=0;
-    smashButton.x=derecha.x;
-    smashButton.y=derecha.y;
+    smashButton.x=botonPala45.x;
+    smashButton.y=botonPala45.y;
     flechaTuto.x=pala.x;
     flechaTuto.y=pala.y;
     brilloBola.x=bola.x;
@@ -439,7 +493,7 @@ if (bola.x!=center_width&&rebotePala==0){
   if(onTutorial==2){
     if(bola.body.isStatic==false) {
       this.tweens.add({
-          targets: izquierda,
+          targets: botonPala125,
           scaleX: 1.1,
           scaleY: 1.1,
           yoyo: true,
@@ -454,8 +508,8 @@ if (bola.x!=center_width&&rebotePala==0){
     tutorialBG.setFlipX(true);
     flechaTutoInv.x=pala.x;
     flechaTutoInv.y=pala.y;
-    smashButton.x=izquierda.x;
-    smashButton.y=izquierda.y;
+    smashButton.x=botonPala125.x;
+    smashButton.y=botonPala125.y;
     brilloBola.x=bola.x;
     brilloBola.y=bola.y;
     brilloPared.x=paredIzquierda.x;
@@ -474,6 +528,7 @@ if (bola.x!=center_width&&rebotePala==0){
           brilloBola.x=5000;
           brilloPared.x=5000;
           onTutorial=0;
+          tutorialForzado=false;
       });
   }
 
@@ -498,7 +553,7 @@ if (bola.x < 0||bola.x>this.sys.game.config.width)
             score++;
             this.addDestello();
             dropSound.play();
-            if ((bestScore<4)&&(score==1)){onTutorial=2;}
+            if (((bestScore<4)||tutorialForzado)&&(score==1)){onTutorial=2;}
           }
           else{
             if(score>bestScore){this.saveFile(); newBest=true;}
@@ -592,6 +647,7 @@ if (bola.x < 0||bola.x>this.sys.game.config.width)
 gameScene.gameOver = function(){
   //console.log('entra a game over');
   currentState=2;
+  tutorialForzado=false;
 //  this.isTerminating = true;
 
 if(bola.x<100){
@@ -646,38 +702,18 @@ if (score>0){
 };
 
 
+//El registro de localStorage sigue siendo 'selektorFile'; SelektorSettings le
+//añade los ajustes nuevos y sabe leer los registros antiguos.
 gameScene.saveFile = function(){
-//  console.log('entra a SAVE');
-  if(score>bestScore){
-    var file = {
-        bestScore: score,
-        musicStatus: musicStatus
-    };
-    localStorage.setItem('selektorFile',JSON.stringify(file));
-    bestScore=score;
-  }else{
-    var file = {
-        bestScore: bestScore,
-        musicStatus: musicStatus
-    };
-    localStorage.setItem('selektorFile',JSON.stringify(file));
-  }
+  if(score>bestScore){bestScore=score;}
+  SelektorSettings.values.bestScore=bestScore;
+  SelektorSettings.save();
 };
 
 gameScene.loadFile = function(){
-    var file = JSON.parse(localStorage.getItem('selektorFile'));
-    if(file) {
-      bestScore = file.bestScore;
-      musicStatus = file.musicStatus;
-//      console.log('intenta leer a file');
-//      console.log(file);
-//      bestScore=0;
-    }else {
-      bestScore=0;
-      musicStatus=1;
-//      console.log('se brinca leer file');
-    }
-    //console.log(bestScore);
+  var ajustes=SelektorSettings.load();
+  bestScore=ajustes.bestScore;
+  musicStatus=ajustes.musicStatus;
 };
 
 

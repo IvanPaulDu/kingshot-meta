@@ -225,6 +225,108 @@ const peek = (page) => page.evaluate(() => {
   console.log('      puntos logrados antes de fallar: ' + sawScore);
   await ctx.close();
 
+  // ============ 4. Menú de ajustes ============
+  console.log('\n[4] Ajustes: volúmenes, velocidad, controles y tutorial');
+  ({ ctx, page } = await newPage(browser, JSON.stringify({ bestScore: 12, musicStatus: 1 })));
+
+  await tap(page, 81, 451);             // engranaje
+  await sleep(350);
+  check(await page.evaluate(() => window.panelAjustes.abierto), 'el engranaje abre el panel');
+  check(await page.evaluate(() => window.startButton.alpha < 0.2),
+    'el panel oculta los botones del menú');
+  await page.screenshot({ path: path.join(SHOTS, '08-ajustes.png') });
+
+  // Deslizadores: x=44 es 0 %, x=276 es 100 %; filas en y=144/196/248.
+  await tap(page, 160, 144);
+  let v = await page.evaluate(() => window.SelektorSettings.values.musicVolume);
+  check(Math.abs(v - 0.5) < 0.03, 'la música se ajusta al 50 %', Math.round(v * 100) + '%');
+  check(await page.evaluate(() => Math.abs(window.bgMusic.volume - 0.5) < 0.03),
+    'el volumen se aplica a la música en curso');
+
+  await tap(page, 44, 196);
+  check(await page.evaluate(() => window.SelektorSettings.values.sfxVolume) === 0,
+    'los efectos bajan al 0 %');
+  await tap(page, 276, 196);
+  v = await page.evaluate(() => window.SelektorSettings.values.sfxVolume);
+  check(v === 1, 'los efectos suben al 100 %', Math.round(v * 100) + '%');
+
+  await tap(page, 276, 248);
+  check(await page.evaluate(() => window.SelektorSettings.values.speedIndex) === 4,
+    'la velocidad llega al último paso');
+  await tap(page, 160, 248);
+  check(await page.evaluate(() => window.SelektorSettings.values.speedIndex) === 2,
+    'la velocidad encaja en pasos discretos');
+  await tap(page, 276, 248);
+
+  // El estado del interruptor se lee de la textura que hay en pantalla, no del
+  // valor guardado: así se detecta que se dibuje encendido estando apagado.
+  const estadoSwitch = () => page.evaluate(() => window.game.scene.scenes[0].children.list
+    .filter((o) => o.texture && /ui_switch_(on|off)$/.test(o.texture.key) && o.visible)
+    .map((o) => o.texture.key));
+  check(JSON.stringify(await estadoSwitch()) === '["ui_switch_off"]',
+    'el interruptor se dibuja apagado por defecto', JSON.stringify(await estadoSwitch()));
+  await tap(page, 252, 286);
+  check(await page.evaluate(() => window.SelektorSettings.values.invertControls) === true,
+    'el interruptor invierte los controles');
+  check(JSON.stringify(await estadoSwitch()) === '["ui_switch_on"]',
+    'el interruptor se dibuja encendido tras pulsarlo', JSON.stringify(await estadoSwitch()));
+
+  const guardado = await page.evaluate(() => JSON.parse(localStorage.getItem('selektorFile')));
+  check(guardado.musicVolume === 0.5 && guardado.speedIndex === 4 &&
+    guardado.invertControls === true && guardado.bestScore === 12,
+    'los ajustes se guardan en localStorage sin perder el récord',
+    JSON.stringify(guardado));
+
+  // Silenciar la música por completo debe apagar el icono de la bocina.
+  await tap(page, 44, 144);
+  check(await page.evaluate(() => window.musicStatus) === 0 &&
+    await page.evaluate(() => window.bocinaOff.x < 100),
+    'la música al 0 % apaga el icono de la bocina');
+  await tap(page, 160, 144);
+
+  await tap(page, 160, 382);            // CERRAR
+  await sleep(350);
+  check(!(await page.evaluate(() => window.panelAjustes.abierto)), 'el botón CERRAR cierra el panel');
+  check(await page.evaluate(() => window.startButton.alpha > 0.8), 'el menú vuelve a aparecer');
+
+  // Tutorial a demanda, con un récord muy por encima del umbral original.
+  await tap(page, 81, 451);
+  await sleep(300);
+  await tap(page, 160, 332);            // VER TUTORIAL
+  await sleep(1000);
+  st = await peek(page);
+  check(st.onTutorial === 1, 'VER TUTORIAL lanza el tutorial con bestScore=12',
+    'onTutorial=' + st.onTutorial);
+  const cfg = await page.evaluate(() => ({
+    timeScale: window.game.scene.scenes[0].matter.world.engine.timing.timeScale,
+    texDerecha: window.derecha.texture.key,
+    texIzquierda: window.izquierda.texture.key,
+    pulsa45EnIzquierda: window.botonPala45 === window.izquierda,
+    volDrop: window.dropSound.volume
+  }));
+  check(Math.abs(cfg.timeScale - 1.3) < 0.001,
+    'la velocidad se aplica a la simulación de Matter', 'timeScale=' + cfg.timeScale);
+  check(cfg.texDerecha === 'flecha_izquierda' && cfg.texIzquierda === 'flecha_derecha',
+    'los iconos de las flechas se intercambian al invertir');
+  check(cfg.pulsa45EnIzquierda, 'el botón izquierdo pasa a desviar a la derecha');
+  check(cfg.volDrop === 1, 'los efectos usan el volumen configurado', 'volumen=' + cfg.volDrop);
+  await page.screenshot({ path: path.join(SHOTS, '09-tutorial-invertido.png') });
+
+  // El tutorial forzado también encadena su segunda parte.
+  await tap(page, 60, 380);             // ahora el botón de 45° está a la izquierda
+  await sleep(300);
+  st = await peek(page);
+  check(st.palaAngle === 45, 'el toque invertido gira la pala a 45°', 'angle=' + st.palaAngle);
+  for (let i = 0; i < 60; i++) {
+    await sleep(150);
+    st = await peek(page);
+    if (st.onTutorial === 2 || st.state !== 'actionPhase') break;
+  }
+  check(st.onTutorial === 2, 'el tutorial a demanda encadena su segunda parte',
+    'onTutorial=' + st.onTutorial + ' score=' + st.score);
+  check(page.errors.length === 0, 'sin errores en el menú de ajustes', page.errors.join(' | '));
+  await ctx.close();
+
   await browser.close();
   console.log(failures === 0
     ? '\nTODO CORRECTO\n'

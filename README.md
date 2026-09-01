@@ -68,7 +68,8 @@ y el cuerpo físico de la bola sale de `setCircle()` (radio = ancho/2).
 | `cierre_final`, `tutorial_back` | lienzo completo | Se rehacen si cambia el tamaño |
 | `smash_button` | 100×100 | Indicador "toca aquí" |
 | `flecha_tuto` | 160×160 | Arco de giro; envuelve la pala sin taparla |
-| `destello` | 160×40 | Se tiñe del color de la bola al puntuar |
+| `destello` | 64×44 | Chispazo de cuatro puntas al puntuar; se tiñe |
+| `aviso_saque` | 240×52 | «TOCA PARA EMPEZAR» |
 | `particula_estrella` | 24×24 | Partículas del choque |
 | `bocina_on/off`, `info_button`, `ajustes_button` | 48×48 | |
 | `ui_panel` | 296×352 | Fondo del menú de ajustes |
@@ -134,6 +135,10 @@ Detalles:
 
 - `cierre_final` y `tutorial_back` se generan con el tamaño real del lienzo, y
   `tex()` rehace cualquier textura cuyo tamaño haya cambiado.
+- El fondo de barras giratorias se dimensiona a partir de la diagonal del
+  lienzo más el vaivén de 50 px que le aplica `update()`. Las barras mantienen
+  sus 125 px de ancho y se añaden las que hagan falta (5 en 320×480, 9 en un
+  20:9); si no, al girar asoma el fondo blanco por las esquinas.
 - El visor todavía crece un poco después de arrancar, cuando Android oculta las
   barras del sistema. `window.ajustarLienzo()` recalcula el alto y rehace la
   escena, **solo desde el menú**: en plena partida se ignora para no perder la
@@ -144,6 +149,16 @@ Detalles:
 - En pantallas más altas la bola cae desde más arriba: da algo más de margen de
   reacción y llega con más velocidad a la pala. Se compensa solo bastante bien,
   y en todo caso está el ajuste de velocidad.
+
+## Saque a petición
+
+Al empezar una partida la bola se queda quieta arriba con el aviso «TOCA PARA
+EMPEZAR» hasta que el jugador toca la pantalla o pulsa una tecla. Da tiempo a
+mirar el color de la bola y el de las paredes antes de que empiece a caer, y de
+paso el mismo toque puede girar la pala si cae sobre una flecha.
+
+Los tutoriales no lo usan: ya retienen la bola por su cuenta hasta que se pulsa
+el botón que están enseñando.
 
 ## Menú de ajustes
 

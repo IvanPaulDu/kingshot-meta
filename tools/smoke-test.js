@@ -23,7 +23,7 @@ const TEXTURE_KEYS = [
   'flecha_izquierda', 'pared_derecha', 'pared_izquierda', 'particula_estrella',
   'start_button', 'destello', 'copa', 'cierre_final', 'smash_button',
   'tutorial_back', 'flecha_tuto', 'bocina_on', 'bocina_off', 'info_button',
-  'info_about', 'fb_button', 'insta_button', 'score_font'
+  'info_about', 'fb_button', 'insta_button', 'score_font', 'aviso_saque'
 ];
 const AUDIO_KEYS = ['drop', 'crash_sound', 'bounce_sound', 'bg_music'];
 
@@ -83,6 +83,47 @@ async function tapObj(page, nombre) {
   await tap(page, p.x, p.y);
 }
 
+/**
+ * Muestrea las cuatro esquinas de la pantalla a lo largo del ciclo del fondo y
+ * cuenta cuántas salen blancas, que es el síntoma de que el bloque de barras no
+ * llega a cubrirlas. Se decodifica el PNG en la propia página.
+ */
+async function esquinasBlancas(page, muestras) {
+  let blancas = 0;
+  for (let i = 0; i < muestras; i++) {
+    await sleep(220);
+    const png = (await page.screenshot()).toString('base64');
+    const cols = await page.evaluate(async (d) => {
+      const img = new Image();
+      img.src = 'data:image/png;base64,' + d;
+      await img.decode();
+      const c = document.createElement('canvas');
+      c.width = img.width; c.height = img.height;
+      const g = c.getContext('2d');
+      g.drawImage(img, 0, 0);
+      return [[1, 1], [img.width - 2, 1], [1, img.height - 2], [img.width - 2, img.height - 2]]
+        .map(([x, y]) => Array.from(g.getImageData(x, y, 1, 1).data).slice(0, 3));
+    }, png);
+    for (const c of cols) {
+      if (c[0] > 245 && c[1] > 245 && c[2] > 245) { blancas++; }
+    }
+  }
+  return blancas;
+}
+
+/** El fondo gira 360°, así que su bloque de barras debe cubrir la diagonal del
+ *  lienzo; si no, asoma el fondo blanco por las esquinas. */
+const cobertura = (page) => page.evaluate(() => {
+  const w = window.game.config.width, h = window.game.config.height;
+  const barras = window.grupoBG.list;
+  return {
+    diagonal: Math.round(Math.sqrt(w * w + h * h)),
+    ancho: Math.round(barras.length * barras[0].displayWidth),
+    alto: Math.round(barras[0].displayHeight),
+    n: barras.length
+  };
+});
+
 const peek = (page) => page.evaluate(() => {
   // Tras scene.restart() los objetos siguen referenciados pero ya están
   // destruidos, así que se leen a la defensiva.
@@ -130,9 +171,25 @@ const peek = (page) => page.evaluate(() => {
 
   console.log('      renderer=' + gen.renderer + '  audio=' + gen.audioKind +
     ' (' + gen.musicSeconds + 's)  bola=' + gen.sizes.bola + ' pala=' + gen.sizes.pala);
-  check(gen.missingTex.length === 0, 'las 24 texturas existen', gen.missingTex.join(','));
+  check(gen.missingTex.length === 0, `las ${TEXTURE_KEYS.length} texturas existen`,
+    gen.missingTex.join(','));
+
+  // El destello se escala hasta x2,2 centrado en el borde de la pared, así que
+  // solo se ve la mitad. Antes ocupaba el 55 % del ancho y parecía que la bola
+  // se estiraba.
+  const flash = await page.evaluate(() => {
+    const t = window.game.scene.scenes[0].textures.get('destello').getSourceImage();
+    return { w: t.width, h: t.height, lienzo: window.game.config.width };
+  });
+  const ocupa = (flash.w * 2.2) / 2 / flash.lienzo;
+  check(ocupa < 0.3, 'el destello no invade la pantalla al puntuar',
+    `${flash.w}x${flash.h}, ocupa el ${Math.round(ocupa * 100)} % del ancho`);
   check(gen.missingAudio.length === 0, 'los 4 audios existen', gen.missingAudio.join(','));
   check(gen.audioKind === 'AudioBuffer', 'el audio es un AudioBuffer de Web Audio', gen.audioKind);
+  const cob = await cobertura(page);
+  check(Math.min(cob.ancho, cob.alto) >= cob.diagonal + 100,
+    'el fondo giratorio cubre las esquinas (giro + vaivén de 50 px)',
+    `${cob.n} barras, ${cob.ancho}x${cob.alto} sobre una diagonal de ${cob.diagonal}`);
   check(page.errors.length === 0, 'sin errores de consola', page.errors.join(' | '));
   await page.screenshot({ path: path.join(SHOTS, '01-menu.png') });
 
@@ -218,6 +275,27 @@ const peek = (page) => page.evaluate(() => {
   await sleep(600);
   st = await peek(page);
   check(st.onTutorial === 0, 'sin tutorial cuando bestScore >= 4', 'onTutorial=' + st.onTutorial);
+
+  // La partida no arranca hasta que el jugador toca la pantalla.
+  const cy3 = await page.evaluate(() => window.game.config.height / 2);
+  check(await page.evaluate(() => window.esperandoSaque) === true &&
+    st.ballStatic === true, 'la bola espera quieta al empezar',
+    'esperandoSaque=' + await page.evaluate(() => window.esperandoSaque));
+  check(await page.evaluate(() => window.avisoSaque.x < 1000),
+    'se muestra el aviso "toca para empezar"');
+  await sleep(900);
+  const quieta = await peek(page);
+  check(quieta.ballY === 10, 'la bola no se mueve mientras se espera',
+    'y=' + quieta.ballY);
+
+  await tap(page, 160, cy3);            // toque para sacar
+  await sleep(120);
+  check(await page.evaluate(() => window.esperandoSaque) === false,
+    'el toque suelta la bola');
+  check(await page.evaluate(() => window.avisoSaque.x > 1000), 'el aviso desaparece al sacar');
+  await sleep(500);
+  const cayendo = await peek(page);
+  check(cayendo.ballY > 10, 'la bola empieza a caer tras el toque', 'y=' + cayendo.ballY);
 
   // Se juega solo (la pala arranca a 125°); se espera al desenlace.
   let sawScore = 0, sawOver = false, sawMenu = false;
@@ -378,6 +456,13 @@ const peek = (page) => page.evaluate(() => {
     check(m.cierre[0] === m.ancho && m.cierre[1] === m.alto,
       `${p.nombre}: el cierre de partida cubre todo el lienzo`, m.cierre.join('x'));
     check(!m.scrollX, `${p.nombre}: la página no desborda en horizontal`);
+    const c = await cobertura(page);
+    check(Math.min(c.ancho, c.alto) >= c.diagonal + 100,
+      `${p.nombre}: el fondo cubre las esquinas al girar`,
+      `${c.n} barras, ${c.ancho}x${c.alto} sobre una diagonal de ${c.diagonal}`);
+    const blancas = await esquinasBlancas(page, 4);
+    check(blancas === 0, `${p.nombre}: ninguna esquina deja ver el fondo blanco`,
+      blancas + ' de 16 muestras');
 
     // La partida tiene que seguir siendo jugable con esa geometría.
     await tapObj(page, 'startButton');

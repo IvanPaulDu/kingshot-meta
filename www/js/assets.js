@@ -268,23 +268,34 @@
         'bold 14px ' + FONT_STACK, INK, 'rgba(255,255,255,0.9)', 6);
     });
 
-    // --- destello: se tiñe del color de la bola al puntuar
-    tex(scene, 'destello', 160, 40, function (ctx, w, h) {
+    // --- destello: chispazo al acertar el color de la pared; se tiñe con el
+    //     color de la bola. El juego lo escala hasta x2,2 justo sobre la pared,
+    //     así que tiene que ser compacto: siendo una mancha ancha parecía que
+    //     la bola se estiraba y tapaba medio ancho de pantalla.
+    tex(scene, 'destello', 64, 44, function (ctx, w, h) {
       var cx = w / 2, cy = h / 2;
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.scale(1, h / w);
-      var g = ctx.createRadialGradient(0, 0, 0, 0, 0, cx);
-      g.addColorStop(0, 'rgba(255,255,255,1)');
-      g.addColorStop(0.3, 'rgba(255,255,255,0.55)');
+      var g = ctx.createRadialGradient(cx, cy, 0, cx, cy, cy);
+      g.addColorStop(0, 'rgba(255,255,255,0.9)');
+      g.addColorStop(0.4, 'rgba(255,255,255,0.28)');
       g.addColorStop(1, 'rgba(255,255,255,0)');
       ctx.fillStyle = g;
       ctx.beginPath();
-      ctx.arc(0, 0, cx, 0, Math.PI * 2);
+      ctx.arc(cx, cy, cy, 0, Math.PI * 2);
       ctx.fill();
-      ctx.restore();
-      ctx.fillStyle = 'rgba(255,255,255,0.85)';
-      roundRect(ctx, 10, cy - 1.5, w - 20, 3, 1.5);
+
+      // Cuatro puntas, la horizontal más larga (queda a ras de la pared).
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.moveTo(0, cy);
+      ctx.quadraticCurveTo(cx - 4, cy - 3, cx, 0);
+      ctx.quadraticCurveTo(cx + 4, cy - 3, w, cy);
+      ctx.quadraticCurveTo(cx + 4, cy + 3, cx, h);
+      ctx.quadraticCurveTo(cx - 4, cy + 3, 0, cy);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, 5, 0, Math.PI * 2);
       ctx.fill();
     });
 
@@ -350,6 +361,18 @@
       }
       centeredText(ctx, 'COLOR EQUIVOCADO', w / 2, py + 106,
         'bold 14px ' + FONT_STACK, 'rgba(255,255,255,0.72)');
+    });
+
+    // --- aviso de saque: la partida no arranca hasta que el jugador toca
+    tex(scene, 'aviso_saque', 240, 52, function (ctx, w, h) {
+      roundRect(ctx, 2.5, 2.5, w - 5, h - 5, (h - 5) / 2);
+      ctx.fillStyle = 'rgba(20,23,29,0.88)';
+      ctx.fill();
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = '#ffffff';
+      ctx.stroke();
+      centeredText(ctx, 'TOCA PARA EMPEZAR', w / 2, h / 2 + 1,
+        'bold 17px ' + FONT_STACK, '#ffffff');
     });
 
     // --- indicador "toca aquí" del tutorial

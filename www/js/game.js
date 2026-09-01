@@ -39,6 +39,7 @@ gameScene.init = function(){
   musicStatus=1;
   muestraAbout=false;
   muestraAjustes=false;
+  esperandoSaque=false;
   rebotePala=false;
   this.loadFile();
 };
@@ -405,6 +406,42 @@ if(onTutorial==0){
   bola.setCircle();
   bola.setBounce(Phaser.Math.Between(7,9)/10);
 
+  //Saque a petición: la bola espera quieta hasta que el jugador toca la
+  //pantalla o pulsa una tecla. En los tutoriales manda el propio tutorial, que
+  //ya retiene la bola hasta que se pulsa el botón que enseña.
+  var escenaJuego=this;
+  avisoSaque=this.add.image(center_width,center_height,'aviso_saque').setDepth(3);
+  esperandoSaque=(onTutorial==0);
+  if(esperandoSaque){
+    bola.setStatic(true);
+    avisoSaque.setAlpha(0);
+    this.tweens.add({targets:avisoSaque,alpha:1,duration:200});
+    this.tweens.add({
+      targets:avisoSaque,
+      scaleX:1.06,
+      scaleY:1.06,
+      duration:650,
+      yoyo:true,
+      repeat:-1,
+      ease:'Sine.easeInOut'
+    });
+    soltarBola=function(){
+      if(!esperandoSaque){return;}
+      esperandoSaque=false;
+      escenaJuego.tweens.killTweensOf(avisoSaque);
+      avisoSaque.x=5000;
+      bola.setStatic(false);
+      bola.setCircle();
+      bola.setBounce(Phaser.Math.Between(7,9)/10);
+    };
+    //Con `on` y no `once`: así el mismo toque puede además girar la pala si cae
+    //sobre una flecha, y el segundo toque ya no hace nada.
+    this.input.on('pointerdown',soltarBola);
+    this.input.keyboard.on('keydown',soltarBola);
+  }else{
+    avisoSaque.x=5000;
+  }
+
   crashParticles=this.add.particles('particula_estrella');
 
 }
@@ -736,27 +773,28 @@ function checkOrientation (orientation){
 }
 
 gameScene.backgroundAnim=function (){
-  barra1BG=this.add.image(-250,0,'pared_derecha');
-  barra1BG.setTint(0x509c23);
-  barra1BG.setDisplaySize(125,1000);
+  //Las barras giran 360 grados, así que el bloque tiene que cubrir la diagonal
+  //del lienzo o asoma el fondo blanco por las esquinas. Además update() pasea el
+  //grupo describiendo un círculo de 50 px de radio, que hay que sumar (100 px de
+  //diámetro) más un margen. Las barras conservan sus 125 px de ancho, el aspecto
+  //del original, y se añaden las que hagan falta.
+  var VAIVEN_BG=50;   //el radio del paseo de update()
+  var diagonalBG=Math.ceil(Math.sqrt(
+    Math.pow(this.sys.game.config.width,2)+Math.pow(this.sys.game.config.height,2)))
+    +(VAIVEN_BG*2)+20;
+  var anchoBarraBG=125;
+  var numBarrasBG=Math.ceil(diagonalBG/anchoBarraBG);
+  if(numBarrasBG%2===0){numBarrasBG++;}   //impar: una barra queda centrada
+  var tonosBG=[0x509c23,0x5e97d6,0xd3a410,0xb44ea4,0xff2a36];
+  var barrasBG=[];
+  for(var iBG=0;iBG<numBarrasBG;iBG++){
+    var barraBG=this.add.image((iBG-(numBarrasBG-1)/2)*anchoBarraBG,0,'pared_derecha');
+    barraBG.setTint(tonosBG[iBG%tonosBG.length]);
+    barraBG.setDisplaySize(anchoBarraBG,diagonalBG);
+    barrasBG.push(barraBG);
+  }
 
-  barra2BG=this.add.image(-125,0,'pared_derecha');
-  barra2BG.setTint(0x5e97d6);
-  barra2BG.setDisplaySize(125,1000);
-
-  barra3BG=this.add.image(0,0,'pared_derecha');
-  barra3BG.setTint(0xd3a410);
-  barra3BG.setDisplaySize(125,1000);
-
-  barra4BG=this.add.image(125,0,'pared_derecha');
-  barra4BG.setTint(0xb44ea4);
-  barra4BG.setDisplaySize(125,1000);
-
-  barra5BG=this.add.image(250,0,'pared_derecha');
-  barra5BG.setTint(0xff2a36);
-  barra5BG.setDisplaySize(125,1000);
-
-  grupoBG=this.add.container(center_width,center_height,[barra1BG,barra2BG,barra3BG,barra4BG,barra5BG]);
+  grupoBG=this.add.container(center_width,center_height,barrasBG);
   grupoBG.setAlpha(0.85);
   bgTimeLine=this.tweens.timeline({
     targets: grupoBG,

@@ -65,7 +65,7 @@ y el cuerpo físico de la bola sale de `setCircle()` (radio = ancho/2).
 | `flecha_derecha`, `flecha_izquierda` | 74×74 | Controles de giro |
 | `start_button` | 200×64 | |
 | `copa` | 140×48 | La cifra del récord se dibuja a la derecha del trofeo |
-| `cierre_final`, `tutorial_back` | 320×480 | Pantalla completa |
+| `cierre_final`, `tutorial_back` | lienzo completo | Se rehacen si cambia el tamaño |
 | `smash_button` | 100×100 | Indicador "toca aquí" |
 | `flecha_tuto` | 160×160 | Arco de giro; envuelve la pala sin taparla |
 | `destello` | 160×40 | Se tiñe del color de la bola al puntuar |
@@ -107,6 +107,43 @@ tuviera Web Audio, se cae a etiquetas `<audio>` con un WAV en data-URI.
 PNG: `ic_launcher`, `ic_launcher_round` e `ic_launcher_foreground` (icono adaptativo,
 contenido dentro de la zona segura del 66 %) en las cinco densidades, más el
 logotipo del splash. `drawable/splash.xml` lo compone sobre el color de marca.
+
+## Ajuste a la pantalla
+
+El lienzo **no es de 320x480 fijo**. Conserva 320 px de ancho, que es de donde
+salen todas las medidas horizontales del juego (separación de las paredes, largo
+de la pala y recorrido de la bola hasta cada lado), y calcula el alto con la
+proporción real de la pantalla, acotado entre 420 y 800 px:
+
+```
+alto = 320 x (alto del visor / ancho del visor)
+```
+
+Con eso, `Scale.FIT` llena la pantalla entera: ni barras negras ni recorte. Como
+todas las posiciones del juego original se derivan de `config.width` y
+`config.height`, la distribución se reajusta sola.
+
+| Pantalla | Lienzo | Sobra |
+|---|---|---|
+| Tableta 3:4 (768x1024) | 320x427 | 0,6 px |
+| Móvil 16:9 (360x640) | 320x569 | 0,1 px |
+| Móvil 19,5:9 (390x844) | 320x693 | 0,3 px |
+| Móvil 20:9 (412x915) | 320x711 | 0,2 px |
+
+Detalles:
+
+- `cierre_final` y `tutorial_back` se generan con el tamaño real del lienzo, y
+  `tex()` rehace cualquier textura cuyo tamaño haya cambiado.
+- El visor todavía crece un poco después de arrancar, cuando Android oculta las
+  barras del sistema. `window.ajustarLienzo()` recalcula el alto y rehace la
+  escena, **solo desde el menú**: en plena partida se ignora para no perder la
+  puntuación. Tras `scale.resize()` hay que refijar la proporción con
+  `displaySize.setAspectRatio()` y refrescar, o vuelven a aparecer las barras.
+- El `padding` de `env(safe-area-inset-*)` del `body` entra en el cálculo, así
+  que en móviles con muesca el lienzo queda por debajo de ella.
+- En pantallas más altas la bola cae desde más arriba: da algo más de margen de
+  reacción y llega con más velocidad a la pala. Se compensa solo bastante bien,
+  y en todo caso está el ajuste de velocidad.
 
 ## Menú de ajustes
 
@@ -160,7 +197,11 @@ para que funcione sin ficheros externos y en un teléfono:
    config, manteniendo `mode: FIT`. El lienzo sigue siendo de 320×480.
 4. **`window.game = game`** al final del fichero: `let` no crea propiedad en
    `window`, y la envoltura móvil necesita la instancia.
-5. **Ajustes** (añadido posterior): `loadFile`/`saveFile` delegan en
+5. **Tamaño del lienzo**: `width`/`height` del config salen de
+   `altoSegunPantalla()` en lugar de ser 320x480 fijos, y se añade
+   `window.ajustarLienzo()`. Ninguna posición del juego estaba escrita a mano,
+   así que no hizo falta tocar la distribución.
+6. **Ajustes** (añadido posterior): `loadFile`/`saveFile` delegan en
    `SelektorSettings`, el arranque de partida se extrae a `arrancarPartida()`
    para que lo compartan START y «VER TUTORIAL», los dos botones de giro se
    crean a partir de `invertControls`, y la condición del segundo tutorial pasa

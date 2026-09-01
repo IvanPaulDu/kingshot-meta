@@ -816,14 +816,32 @@ newBest=false;
 }
 
 
+//El lienzo conserva 320 px de ancho, que es de donde salen todas las medidas
+//horizontales del juego (separación de las paredes, largo de la pala y recorrido
+//de la bola), y calcula el alto con la proporción real de la pantalla. Así
+//Scale.FIT la llena entera: ni barras negras ni recorte. Todas las posiciones
+//del juego se derivan de config.width/config.height, de modo que la distribución
+//se reajusta sola.
+const ANCHO_BASE=320;
+const ALTO_MIN=420;   //más ancho que 4:3 (tabletas)
+const ALTO_MAX=800;   //más alto que 21:9 (móviles muy alargados)
+
+function altoSegunPantalla(){
+  const caja=document.getElementById('game-root');
+  const r=caja?caja.getBoundingClientRect():null;
+  const w=(r&&r.width)||window.innerWidth||ANCHO_BASE;
+  const h=(r&&r.height)||window.innerHeight||480;
+  return Math.max(ALTO_MIN,Math.min(ALTO_MAX,Math.round(ANCHO_BASE*(h/w))));
+}
+
 //set the configuration of the Game--js object
 let config = {
   type: Phaser.AUTO, //Phaser will use WebGL if available, otherwise Canvas
 //    type: Phaser.CANVAS,
 //  width: 360,
 //  height: 640,
-  width: 320,
-  height: 480,
+  width: ANCHO_BASE,
+  height: altoSegunPantalla(),
   backgroundColor: '#ffffff',
   physics: {
       default: 'matter',
@@ -846,3 +864,21 @@ let game = new Phaser.Game(config);
 
 //se expone la instancia para la envoltura móvil (let no crea propiedad en window)
 window.game = game;
+
+//Al arrancar, el visor todavía puede cambiar de alto (Android oculta las barras
+//del sistema justo después). Se recalcula el lienzo y se rehace la escena, pero
+//solo desde el menú: reiniciar en plena partida perdería la puntuación.
+window.ajustarLienzo=function(){
+  if(!game||!game.isBooted){return false;}
+  const alto=altoSegunPantalla();
+  if(Math.abs(alto-game.config.height)<3){return false;}
+  if(currentStateList[currentState]!=='onMenu'){return false;}
+  game.config.height=alto;
+  game.scale.resize(ANCHO_BASE,alto);
+  //scale.resize() deja el tamaño mostrado con la proporción anterior y volverían
+  //a salir barras: hay que refijar la proporción y refrescar.
+  game.scale.displaySize.setAspectRatio(ANCHO_BASE/alto);
+  game.scale.refresh();
+  game.scene.getScene('Game').scene.restart();
+  return true;
+};

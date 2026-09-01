@@ -34,9 +34,9 @@ function check(ok, label, detail) {
   if (!ok) failures++;
 }
 
-async function newPage(browser, storage) {
+async function newPage(browser, storage, viewport) {
   const ctx = await browser.newContext({
-    viewport: { width: 390, height: 844 },
+    viewport: viewport || { width: 390, height: 844 },
     deviceScaleFactor: 2,
     isMobile: true,
     hasTouch: true
@@ -59,18 +59,28 @@ async function newPage(browser, storage) {
   return { ctx, page };
 }
 
-/** Traduce coordenadas del juego (320x480) a coordenadas de pantalla. */
+/** Traduce coordenadas del juego a coordenadas de pantalla. El alto del lienzo
+ *  depende de la proporción del dispositivo, así que se lee en cada toque. */
 async function tap(page, gx, gy) {
   const p = await page.evaluate(([x, y]) => {
     const c = document.querySelector('#game-root canvas');
     const r = c.getBoundingClientRect();
-    return { x: r.left + (x * r.width) / 320, y: r.top + (y * r.height) / 480 };
+    return {
+      x: r.left + (x * r.width) / window.game.config.width,
+      y: r.top + (y * r.height) / window.game.config.height
+    };
   }, [gx, gy]);
   await page.mouse.move(p.x, p.y);
   await page.mouse.down();
   await sleep(60);
   await page.mouse.up();
   await sleep(120);
+}
+
+/** Pulsa un objeto del juego por su posición real (el alto del lienzo varía). */
+async function tapObj(page, nombre) {
+  const p = await page.evaluate((n) => ({ x: window[n].x, y: window[n].y }), nombre);
+  await tap(page, p.x, p.y);
 }
 
 const peek = (page) => page.evaluate(() => {
@@ -127,25 +137,25 @@ const peek = (page) => page.evaluate(() => {
   await page.screenshot({ path: path.join(SHOTS, '01-menu.png') });
 
   // Panel "acerca de"
-  await tap(page, 293, 453);
+  await tapObj(page, 'infoButton');
   await sleep(400);
   const aboutAlpha = await page.evaluate(() => window.grupoAbout.alpha);
   check(aboutAlpha > 0.9, 'el botón de info abre el panel', 'alpha=' + aboutAlpha);
   await page.screenshot({ path: path.join(SHOTS, '02-about.png') });
-  await tap(page, 293, 453);
+  await tapObj(page, 'infoButton');
   await sleep(400);
 
   // Silenciar / reactivar
-  await tap(page, 29, 451);
+  await tapObj(page, 'bocinaOn');
   await sleep(250);
   const muted = await page.evaluate(() => window.musicStatus);
   check(muted === 0, 'el botón de bocina silencia la música', 'musicStatus=' + muted);
-  await tap(page, 29, 451);
+  await tapObj(page, 'bocinaOff');
   await sleep(250);
 
   // ============ 2. Tutorial (bestScore < 4) ============
   console.log('\n[2] Tutorial y primera puntuación');
-  await tap(page, 160, 240);            // START
+  await tapObj(page, 'startButton');
   await sleep(900);
   let st = await peek(page);
   check(st.state === 'actionPhase', 'entra en fase de juego', st.state);
@@ -153,7 +163,7 @@ const peek = (page) => page.evaluate(() => {
   await sleep(600);
   await page.screenshot({ path: path.join(SHOTS, '03-tutorial.png') });
 
-  await tap(page, 260, 380);            // smashButton sobre la flecha derecha
+  await tapObj(page, 'botonPala45');    // smashButton sobre ese botón
   await sleep(300);
   st = await peek(page);
   check(st.onTutorial === 0 && st.ballStatic === false,
@@ -180,7 +190,7 @@ const peek = (page) => page.evaluate(() => {
   check(st.onTutorial === 2, 'encadena el tutorial izquierdo', 'onTutorial=' + st.onTutorial);
   check(st.ballStatic === true, 'la bola queda en espera durante el tutorial');
   await page.screenshot({ path: path.join(SHOTS, '05-tutorial-izq.png') });
-  await tap(page, 60, 380);             // smashButton sobre la flecha izquierda
+  await tapObj(page, 'botonPala125');
   await sleep(400);
   st = await peek(page);
   check(st.onTutorial === 0 && st.palaAngle === 125,
@@ -204,7 +214,7 @@ const peek = (page) => page.evaluate(() => {
   check(trophy, 'muestra la copa con el récord en el menú');
   await page.screenshot({ path: path.join(SHOTS, '06-menu-record.png') });
 
-  await tap(page, 160, 240);
+  await tapObj(page, 'startButton');
   await sleep(600);
   st = await peek(page);
   check(st.onTutorial === 0, 'sin tutorial cuando bestScore >= 4', 'onTutorial=' + st.onTutorial);
@@ -229,34 +239,36 @@ const peek = (page) => page.evaluate(() => {
   console.log('\n[4] Ajustes: volúmenes, velocidad, controles y tutorial');
   ({ ctx, page } = await newPage(browser, JSON.stringify({ bestScore: 12, musicStatus: 1 })));
 
-  await tap(page, 81, 451);             // engranaje
+  await tapObj(page, 'ajustesButton');
   await sleep(350);
+  // El panel se coloca respecto al centro del lienzo.
+  const cy = await page.evaluate(() => window.game.config.height / 2);
   check(await page.evaluate(() => window.panelAjustes.abierto), 'el engranaje abre el panel');
   check(await page.evaluate(() => window.startButton.alpha < 0.2),
     'el panel oculta los botones del menú');
   await page.screenshot({ path: path.join(SHOTS, '08-ajustes.png') });
 
   // Deslizadores: x=44 es 0 %, x=276 es 100 %; filas en y=144/196/248.
-  await tap(page, 160, 144);
+  await tap(page, 160, cy - 94);
   let v = await page.evaluate(() => window.SelektorSettings.values.musicVolume);
   check(Math.abs(v - 0.5) < 0.03, 'la música se ajusta al 50 %', Math.round(v * 100) + '%');
   check(await page.evaluate(() => Math.abs(window.bgMusic.volume - 0.5) < 0.03),
     'el volumen se aplica a la música en curso');
 
-  await tap(page, 44, 196);
+  await tap(page, 44, cy - 42);
   check(await page.evaluate(() => window.SelektorSettings.values.sfxVolume) === 0,
     'los efectos bajan al 0 %');
-  await tap(page, 276, 196);
+  await tap(page, 276, cy - 42);
   v = await page.evaluate(() => window.SelektorSettings.values.sfxVolume);
   check(v === 1, 'los efectos suben al 100 %', Math.round(v * 100) + '%');
 
-  await tap(page, 276, 248);
+  await tap(page, 276, cy + 10);
   check(await page.evaluate(() => window.SelektorSettings.values.speedIndex) === 4,
     'la velocidad llega al último paso');
-  await tap(page, 160, 248);
+  await tap(page, 160, cy + 10);
   check(await page.evaluate(() => window.SelektorSettings.values.speedIndex) === 2,
     'la velocidad encaja en pasos discretos');
-  await tap(page, 276, 248);
+  await tap(page, 276, cy + 10);
 
   // El estado del interruptor se lee de la textura que hay en pantalla, no del
   // valor guardado: así se detecta que se dibuje encendido estando apagado.
@@ -265,7 +277,7 @@ const peek = (page) => page.evaluate(() => {
     .map((o) => o.texture.key));
   check(JSON.stringify(await estadoSwitch()) === '["ui_switch_off"]',
     'el interruptor se dibuja apagado por defecto', JSON.stringify(await estadoSwitch()));
-  await tap(page, 252, 286);
+  await tap(page, 252, cy + 48);
   check(await page.evaluate(() => window.SelektorSettings.values.invertControls) === true,
     'el interruptor invierte los controles');
   check(JSON.stringify(await estadoSwitch()) === '["ui_switch_on"]',
@@ -278,21 +290,21 @@ const peek = (page) => page.evaluate(() => {
     JSON.stringify(guardado));
 
   // Silenciar la música por completo debe apagar el icono de la bocina.
-  await tap(page, 44, 144);
+  await tap(page, 44, cy - 94);
   check(await page.evaluate(() => window.musicStatus) === 0 &&
     await page.evaluate(() => window.bocinaOff.x < 100),
     'la música al 0 % apaga el icono de la bocina');
-  await tap(page, 160, 144);
+  await tap(page, 160, cy - 94);
 
-  await tap(page, 160, 382);            // CERRAR
+  await tap(page, 160, cy + 144);       // CERRAR
   await sleep(350);
   check(!(await page.evaluate(() => window.panelAjustes.abierto)), 'el botón CERRAR cierra el panel');
   check(await page.evaluate(() => window.startButton.alpha > 0.8), 'el menú vuelve a aparecer');
 
   // Tutorial a demanda, con un récord muy por encima del umbral original.
-  await tap(page, 81, 451);
+  await tapObj(page, 'ajustesButton');
   await sleep(300);
-  await tap(page, 160, 332);            // VER TUTORIAL
+  await tap(page, 160, cy + 94);        // VER TUTORIAL
   await sleep(1000);
   st = await peek(page);
   check(st.onTutorial === 1, 'VER TUTORIAL lanza el tutorial con bestScore=12',
@@ -313,7 +325,7 @@ const peek = (page) => page.evaluate(() => {
   await page.screenshot({ path: path.join(SHOTS, '09-tutorial-invertido.png') });
 
   // El tutorial forzado también encadena su segunda parte.
-  await tap(page, 60, 380);             // ahora el botón de 45° está a la izquierda
+  await tapObj(page, 'botonPala45');     // ahora está a la izquierda
   await sleep(300);
   st = await peek(page);
   check(st.palaAngle === 45, 'el toque invertido gira la pala a 45°', 'angle=' + st.palaAngle);
@@ -325,6 +337,99 @@ const peek = (page) => page.evaluate(() => {
   check(st.onTutorial === 2, 'el tutorial a demanda encadena su segunda parte',
     'onTutorial=' + st.onTutorial + ' score=' + st.score);
   check(page.errors.length === 0, 'sin errores en el menú de ajustes', page.errors.join(' | '));
+  await ctx.close();
+
+  // ============ 5. Ajuste a distintas pantallas ============
+  console.log('\n[5] El lienzo se adapta a la proporción de cada pantalla');
+  const PANTALLAS = [
+    { nombre: 'tableta 3:4', width: 768, height: 1024 },
+    { nombre: 'móvil 16:9', width: 360, height: 640 },
+    { nombre: 'móvil 19.5:9', width: 390, height: 844 },
+    { nombre: 'móvil 20:9', width: 412, height: 915 }
+  ];
+
+  for (const p of PANTALLAS) {
+    ({ ctx, page } = await newPage(browser, null, { width: p.width, height: p.height }));
+    const m = await page.evaluate(() => {
+      const canvas = document.querySelector('#game-root canvas');
+      const caja = document.getElementById('game-root').getBoundingClientRect();
+      const r = canvas.getBoundingClientRect();
+      return {
+        alto: window.game.config.height,
+        ancho: window.game.config.width,
+        cajaW: Math.round(caja.width), cajaH: Math.round(caja.height),
+        lienzoW: r.width, lienzoH: r.height,
+        cierre: (() => {
+          const t = window.game.scene.scenes[0].textures.get('cierre_final').getSourceImage();
+          return [t.width, t.height];
+        })(),
+        scrollX: document.documentElement.scrollWidth > window.innerWidth
+      };
+    });
+    const esperado = Math.max(420, Math.min(800, Math.round(320 * (p.height / p.width))));
+    const huecoX = m.cajaW - m.lienzoW, huecoY = m.cajaH - m.lienzoH;
+
+    console.log(`      ${p.nombre} (${p.width}x${p.height}) → lienzo ${m.ancho}x${m.alto},` +
+      ` sobra ${huecoX.toFixed(1)}x${huecoY.toFixed(1)} px`);
+    check(m.alto === esperado, `${p.nombre}: alto del lienzo según la proporción`,
+      m.alto + ' (esperado ' + esperado + ')');
+    check(huecoX < 3 && huecoY < 3, `${p.nombre}: sin barras negras ni recorte`,
+      'sobra ' + huecoX.toFixed(1) + 'x' + huecoY.toFixed(1) + ' px');
+    check(m.cierre[0] === m.ancho && m.cierre[1] === m.alto,
+      `${p.nombre}: el cierre de partida cubre todo el lienzo`, m.cierre.join('x'));
+    check(!m.scrollX, `${p.nombre}: la página no desborda en horizontal`);
+
+    // La partida tiene que seguir siendo jugable con esa geometría.
+    await tapObj(page, 'startButton');
+    await sleep(900);
+    await tapObj(page, 'botonPala45');
+    let punt = 0;
+    for (let i = 0; i < 60; i++) {
+      await sleep(150);
+      const e = await peek(page);
+      if (e.score > punt) { punt = e.score; }
+      if (punt > 0 || e.state !== 'actionPhase') { break; }
+    }
+    check(punt > 0, `${p.nombre}: la bola sigue llegando a la pared y puntúa`, 'score=' + punt);
+    check(page.errors.length === 0, `${p.nombre}: sin errores`, page.errors.join(' | '));
+    await page.screenshot({ path: path.join(SHOTS, `10-pantalla-${p.width}x${p.height}.png`) });
+    await ctx.close();
+  }
+
+  // ============ 6. Reajuste en caliente ============
+  // Es la ruta real de Android: el WebView arranca con las barras del sistema
+  // visibles y se hace más alto en cuanto entra el modo inmersivo.
+  console.log('\n[6] Reajuste al cambiar el tamaño del visor');
+  ({ ctx, page } = await newPage(browser, null, { width: 390, height: 700 }));
+  const antes = await page.evaluate(() => window.game.config.height);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await sleep(1200);
+  const despues = await page.evaluate(() => ({
+    alto: window.game.config.height,
+    estado: window.currentStateList[window.currentState],
+    hueco: (() => {
+      const c = document.querySelector('#game-root canvas').getBoundingClientRect();
+      const caja = document.getElementById('game-root').getBoundingClientRect();
+      return Math.round(caja.height - c.height);
+    })()
+  }));
+  console.log(`      ${antes} → ${despues.alto} px de alto de lienzo`);
+  check(antes === 574, 'arranca con el alto del visor inicial', 'alto=' + antes);
+  check(despues.alto === 693, 'se reajusta al crecer el visor', 'alto=' + despues.alto);
+  check(despues.hueco < 3, 'sigue sin barras tras el reajuste', 'sobra ' + despues.hueco + ' px');
+  check(despues.estado === 'onMenu', 'vuelve al menú tras reajustar', despues.estado);
+
+  // Un cambio de tamaño en plena partida NO debe reiniciar la escena.
+  await tapObj(page, 'startButton');
+  await sleep(900);
+  const enJuego = await page.evaluate(() => window.game.config.height);
+  await page.setViewportSize({ width: 390, height: 760 });
+  await sleep(1200);
+  st = await peek(page);
+  check(st.state === 'actionPhase' &&
+    await page.evaluate(() => window.game.config.height) === enJuego,
+    'no reajusta en plena partida (no se pierde la puntuación)', 'estado=' + st.state);
+  check(page.errors.length === 0, 'sin errores al reajustar', page.errors.join(' | '));
   await ctx.close();
 
   await browser.close();

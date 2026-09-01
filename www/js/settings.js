@@ -173,7 +173,10 @@
    * hooks: { onMusicVolume, onSfxVolume, onSpeed, onInvert, onTutorial, onToggle }
    */
   function createPanel(scene, hooks) {
+    // Todo se coloca respecto al centro del lienzo, cuyo alto depende de la
+    // proporción de la pantalla; el panel mide 296x352.
     var cx = scene.sys.game.config.width / 2;
+    var cy = scene.sys.game.config.height / 2;
     var objs = [];
     var interactivos = [];
 
@@ -187,13 +190,13 @@
       return parte;
     }
 
-    add(scene.add.image(cx, 238, 'ui_panel'));
-    add(text(scene, cx, 88, 'AJUSTES', 22, '#ffffff', 'center'));
+    add(scene.add.image(cx, cy, 'ui_panel'));
+    add(text(scene, cx, cy - 150, 'AJUSTES', 22, '#ffffff', 'center'));
 
     var filas = [
-      { clave: 'musicVolume', rotulo: 'Música', y: 120 },
-      { clave: 'sfxVolume', rotulo: 'Efectos', y: 172 },
-      { clave: 'speedIndex', rotulo: 'Velocidad', y: 224 }
+      { clave: 'musicVolume', rotulo: 'Música', y: cy - 118 },
+      { clave: 'sfxVolume', rotulo: 'Efectos', y: cy - 66 },
+      { clave: 'speedIndex', rotulo: 'Velocidad', y: cy - 14 }
     ];
     var valorTexto = {};
     var sliders = {};
@@ -223,17 +226,17 @@
       }
     });
 
-    add(text(scene, cx - 116, 286, 'Invertir controles', 15, '#ffffff', 'left'));
-    var interruptor = add(toggle(scene, cx + 92, 286, values.invertControls, function (v) {
+    add(text(scene, cx - 116, cy + 48, 'Invertir controles', 15, '#ffffff', 'left'));
+    var interruptor = add(toggle(scene, cx + 92, cy + 48, values.invertControls, function (v) {
       values.invertControls = v;
       save();
       if (hooks.onInvert) { hooks.onInvert(v); }
     }));
 
-    add(button(scene, cx, 332, 'VER TUTORIAL', function () {
+    add(button(scene, cx, cy + 94, 'VER TUTORIAL', function () {
       if (hooks.onTutorial) { hooks.onTutorial(); }
     }));
-    add(button(scene, cx, 382, 'CERRAR', function () { api.hide(); }));
+    add(button(scene, cx, cy + 144, 'CERRAR', function () { api.hide(); }));
 
     function refrescarValores() {
       valorTexto.musicVolume.setText(Math.round(values.musicVolume * 100) + '%');

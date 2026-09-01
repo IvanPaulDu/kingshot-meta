@@ -21,16 +21,33 @@
     lastTouch = now;
   }, { passive: false });
 
-  // --- Aviso de orientación --------------------------------------------
+  // --- Orientación y ajuste del lienzo ---------------------------------
   function syncOrientation() {
     var landscape = window.innerWidth > window.innerHeight;
     document.body.classList.toggle('landscape', landscape);
   }
-  window.addEventListener('resize', syncOrientation);
+
+  // El visor cambia de alto poco después de arrancar (Android oculta las barras
+  // del sistema) y al rotar en el navegador. Se reajusta el lienzo con retardo
+  // para no encadenar reinicios durante la animación de la barra.
+  var reajuste = null;
+  function alRedimensionar() {
+    syncOrientation();
+    clearTimeout(reajuste);
+    reajuste = setTimeout(function () {
+      if (window.ajustarLienzo) { window.ajustarLienzo(); }
+    }, 250);
+  }
+  window.addEventListener('resize', alRedimensionar);
   window.addEventListener('orientationchange', function () {
-    setTimeout(syncOrientation, 120);
+    setTimeout(alRedimensionar, 120);
   });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', alRedimensionar);
+  }
   syncOrientation();
+  // Primer ajuste tras el arranque, cuando el WebView ya tiene su tamaño final.
+  setTimeout(function () { if (window.ajustarLienzo) { window.ajustarLienzo(); } }, 400);
 
   // --- Desbloqueo del audio al primer toque ----------------------------
   function unlockAudio() {

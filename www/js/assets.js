@@ -39,9 +39,18 @@
     return c;
   }
 
-  /** Crea (una sola vez) una textura de canvas registrada en el gestor de texturas. */
+  /**
+   * Crea (una sola vez) una textura de canvas registrada en el gestor de
+   * texturas. Si ya existe con otro tamaño se rehace: el lienzo del juego se
+   * adapta a la proporción de cada pantalla y las texturas a pantalla completa
+   * tienen que seguirle.
+   */
   function tex(scene, key, w, h, draw) {
-    if (scene.textures.exists(key)) { return; }
+    if (scene.textures.exists(key)) {
+      var previa = scene.textures.get(key).getSourceImage();
+      if (previa.width === w && previa.height === h) { return; }
+      scene.textures.remove(key);
+    }
     var canvas = makeCanvas(w, h);
     var ctx = canvas.getContext('2d');
     draw(ctx, w, h);
@@ -97,6 +106,9 @@
   // ---------------------------------------------------------------------
 
   function buildTextures(scene) {
+    // Tamaño real del lienzo: el alto depende de la proporción del dispositivo.
+    var LIENZO_W = scene.sys.game.config.width;
+    var LIENZO_H = scene.sys.game.config.height;
 
     // --- pared: bloque blanco de 24px que el juego estira a toda la altura
     //     y tiñe con setTint(). Debe ser prácticamente blanco puro para que
@@ -312,15 +324,16 @@
       ctx.restore();
     });
 
-    // --- pantalla de cierre (game over)
-    tex(scene, 'cierre_final', 320, 480, function (ctx, w, h) {
+    // --- pantalla de cierre (game over), a lienzo completo
+    tex(scene, 'cierre_final', LIENZO_W, LIENZO_H, function (ctx, w, h) {
       var g = ctx.createRadialGradient(w / 2, h / 2, 40, w / 2, h / 2, h * 0.75);
       g.addColorStop(0, 'rgba(0,0,0,0.35)');
       g.addColorStop(1, 'rgba(0,0,0,0.78)');
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, w, h);
 
-      var pw = 284, ph = 132, px = (w - pw) / 2, py = 300;
+      var pw = Math.min(284, w - 36), ph = 132;
+      var px = (w - pw) / 2, py = Math.round(h * 0.625);   // 300 en el diseño de 480
       roundRect(ctx, px, py, pw, ph, 22);
       ctx.fillStyle = 'rgba(20,23,29,0.94)';
       ctx.fill();
@@ -362,7 +375,7 @@
     // --- velo del tutorial: oscurece el lado izquierdo para destacar el
     //     derecho. El juego usa setFlipX(true) para la versión izquierda,
     //     así que no puede llevar texto.
-    tex(scene, 'tutorial_back', 320, 480, function (ctx, w, h) {
+    tex(scene, 'tutorial_back', LIENZO_W, LIENZO_H, function (ctx, w, h) {
       var g = ctx.createLinearGradient(0, 0, w, 0);
       g.addColorStop(0, 'rgba(0,0,0,0.9)');
       g.addColorStop(0.45, 'rgba(0,0,0,0.62)');

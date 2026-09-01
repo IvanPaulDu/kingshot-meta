@@ -106,8 +106,8 @@
     }
   };
 
-  // Bucle de fondo: cuatro compases en re menor a 112 pulsos por minuto.
-  var BPM = 112;
+  // Bucle de fondo: cuatro compases en re menor a 124 pulsos por minuto.
+  var BPM = 124;
   var STEP = (60 / BPM) / 4;
   var BARS = 4;
 

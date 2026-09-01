@@ -96,6 +96,16 @@ barras de sistema. `Vaiven.refit()` recalcula y rehace la portada, pero nunca en
 plena partida. Tras `scale.resize()` hay que refijar la proporción con
 `displaySize.setAspectRatio()` y refrescar, o las franjas vuelven.
 
+### Paleta
+
+Cinco tonos vivos repartidos por el círculo cromático más el blanco y el negro,
+que no se confunden con nada. El telón de fondo usa una gama aparte, de
+saturación media, por dos razones: no compite con los colores de la partida y
+deja legibles tanto el blanco como el negro, que sobre un fondo vivo se
+perderían. Las muestras dibujadas como formas rellenas llevan contorno claro u
+oscuro según su luminosidad, y el chispazo del acierto destella en blanco cuando
+el color es demasiado oscuro para verse.
+
 ### Dificultad
 
 La velocidad de saque sube con el marcador siguiendo una curva que se satura,
@@ -117,7 +127,7 @@ geométrica y un muestreo de los píxeles de las cuatro esquinas.
 
 Cuatro piezas descritas como listas de eventos (cuándo, qué nota, qué timbre,
 qué envolvente) que un único paso de render mezcla en un búfer. El bucle son
-cuatro compases en re menor a 112 pulsos por minuto con bajo, arpegio, batería y
+cuatro compases en re menor a 124 pulsos por minuto con bajo, arpegio, batería y
 colchón. El búfer se inyecta en la caché de audio de Phaser; si el dispositivo
 no tuviera Web Audio se cae a etiquetas `<audio>` con un WAV incrustado.
 

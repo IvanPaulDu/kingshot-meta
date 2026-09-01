@@ -215,7 +215,7 @@
     var x = (w - span) / 2;
     for (var i = 0; i < swatches.length; i++) {
       pen.roundedBox(x + i * (chip + gap), 12, chip, chip, 8)
-        .fill(swatches[i].css).stroke(INK, 3);
+        .fill(swatches[i].css).stroke(global.Chroma.outline(i), 3);
     }
     pen.label('VAIVÉN', w / 2, 96,
       { size: 50, color: INK, outline: '#ffffff', outlineWidth: 10 });
@@ -407,7 +407,8 @@
     var barW = 28;
     var startX = w / 2 - (swatches.length * (barW + 4) - 4) / 2;
     for (var i = 0; i < swatches.length; i++) {
-      pen.roundedBox(startX + i * (barW + 4), boxY + 74, barW, 8, 4).fill(swatches[i].css);
+      pen.roundedBox(startX + i * (barW + 4), boxY + 74, barW, 8, 4)
+        .fill(swatches[i].css).stroke('rgba(255,255,255,0.35)', 1.5);
     }
     pen.label('COLOR EQUIVOCADO', w / 2, boxY + 106,
       { size: 14, color: 'rgba(255,255,255,0.72)' });

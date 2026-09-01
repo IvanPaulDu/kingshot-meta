@@ -26,7 +26,7 @@
     var stripes = [];
     for (var i = 0; i < count; i++) {
       var bar = scene.add.image((i - (count - 1) / 2) * STRIPE, 0, 'column');
-      bar.setTint(global.Chroma.tint(i % global.Chroma.count));
+      bar.setTint(global.Chroma.BACKDROP[i % global.Chroma.BACKDROP.length]);
       bar.setDisplaySize(STRIPE, span);
       stripes.push(bar);
     }

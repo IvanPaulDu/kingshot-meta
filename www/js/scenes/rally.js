@@ -201,7 +201,7 @@
     this.veil.setPosition(0, 0).setFlipX(aim === 'left');
     this.spin.setPosition(this.blade.x, this.blade.y).setFlipX(aim === 'left');
     this.ring.setPosition(this.steer[aim].x, this.steer[aim].y);
-    this.orbBeacon.setPosition(this.orb.x, this.orb.y).setTint(global.Chroma.tint(this.orbColor));
+    this.orbBeacon.setPosition(this.orb.x, this.orb.y).setTint(global.Chroma.spark(this.orbColor));
     this.columnBeacon.setPosition(this.columns[aim].x, this.columns[aim].y);
 
     this.tweens.add({
@@ -323,7 +323,7 @@
 
   RallyScene.prototype.flash = function () {
     this.sparkle.setPosition(this.orb.x, this.orb.y);
-    this.sparkle.setTint(global.Chroma.tint(this.orbColor));
+    this.sparkle.setTint(global.Chroma.spark(this.orbColor));
     this.tweens.add({
       targets: this.sparkle,
       alpha: 0.6 + Math.random() * 0.2,

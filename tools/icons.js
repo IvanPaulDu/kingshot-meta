@@ -16,7 +16,7 @@ const DENSITIES = { mdpi: 1, hdpi: 1.5, xhdpi: 2, xxhdpi: 3, xxxhdpi: 4 };
 // El dibujado se serializa al navegador, así que va como texto.
 const SKETCH = `
 const INK = '#1d2027';
-const SWATCHES = ['#e8476b','#f2a83c','#74c93e','#35c98a','#33a8d1','#5a5fd6','#b74fd1'];
+const SWATCHES = ['#e8476b','#f2a83c','#74c93e','#ffffff','#000000','#5a5fd6','#b74fd1'];
 
 function roundedBox(ctx, x, y, w, h, r) {
   r = Math.min(r, w / 2, h / 2);
@@ -44,7 +44,7 @@ function emblem(ctx, s) {
   ctx.fillStyle = SWATCHES[0];
   ctx.fill();
   roundedBox(ctx, u(0.805), u(0.10), u(0.145), u(0.80), u(0.072));
-  ctx.fillStyle = SWATCHES[4];
+  ctx.fillStyle = SWATCHES[5];
   ctx.fill();
 
   ctx.save();

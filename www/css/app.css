@@ -1,7 +1,7 @@
-/* Envoltura móvil: pantalla completa, sin scroll ni gestos del navegador. */
+/* Envoltura de pantalla completa: sin scroll, sin zoom, sin gestos del navegador. */
 
 :root {
-  --ink: #14171d;
+  --ink: #1d2027;
 }
 
 * {
@@ -26,12 +26,12 @@ body {
 }
 
 body {
-  /* Respeta el notch / barras de gestos en pantalla completa. */
+  /* Deja libre la muesca y la barra de gestos en pantalla completa. */
   padding: env(safe-area-inset-top) env(safe-area-inset-right)
            env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
-#game-root {
+#stage {
   width: 100%;
   height: 100%;
   display: flex;
@@ -39,15 +39,13 @@ body {
   justify-content: center;
 }
 
-#game-root canvas {
+#stage canvas {
   display: block;
-  /* El lienzo es de 320x480 y Phaser (Scale.FIT) lo escala por CSS; el
-     suavizado del navegador es lo que mejor sienta a estos gráficos. */
   touch-action: none;
 }
 
-/* Aviso de orientación: el juego es 320x480 en vertical. */
-#rotate {
+/* El juego es vertical; en horizontal se pide girar el teléfono. */
+#turn-notice {
   display: none;
   position: fixed;
   inset: 0;
@@ -64,23 +62,18 @@ body {
   letter-spacing: 0.04em;
 }
 
-.rotate-icon {
+.phone-glyph {
   width: 54px;
   height: 86px;
   border: 4px solid #fff;
   border-radius: 10px;
-  animation: tilt 1.8s ease-in-out infinite;
+  animation: nudge 1.8s ease-in-out infinite;
 }
 
-@keyframes tilt {
+@keyframes nudge {
   0%, 40% { transform: rotate(90deg); }
   60%, 100% { transform: rotate(0deg); }
 }
 
-body.landscape #rotate {
-  display: flex;
-}
-
-body.landscape #game-root {
-  visibility: hidden;
-}
+body.sideways #turn-notice { display: flex; }
+body.sideways #stage { visibility: hidden; }

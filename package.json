@@ -1,11 +1,12 @@
 {
-  "name": "selektor",
-  "version": "1.4.0",
+  "name": "vaiven",
+  "version": "1.0.0",
   "private": true,
-  "description": "Selektor — juego 2D en Phaser 3 empaquetado como app nativa de Android con Capacitor. Todos los gráficos, la fuente y el audio se generan por código.",
+  "description": "Vaivén — juego 2D de puntería y color en Phaser 3, empaquetado como app nativa de Android con Capacitor. Gráficos, tipografía y sonido generados por código.",
   "scripts": {
     "serve": "http-server www -p 8123 -c-1",
-    "test": "node tools/smoke-test.js",
+    "test": "node tools/checkup.js",
+    "icons": "node tools/icons.js",
     "sync": "cap sync android",
     "apk:debug": "cap sync android && cd android && ./gradlew assembleDebug",
     "apk:release": "cap sync android && cd android && ./gradlew assembleRelease",

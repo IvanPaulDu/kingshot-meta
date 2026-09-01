@@ -37,8 +37,7 @@
         </provider>
     </application>
 
-    <!-- El juego funciona sin red; solo se abre el navegador para
-         los enlaces sociales del panel "acerca de". -->
+    <!-- El juego funciona sin red y sin acelerador dedicado. -->
     <uses-feature
         android:glEsVersion="0x00020000"
         android:required="false" />

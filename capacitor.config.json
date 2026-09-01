@@ -1,12 +1,12 @@
 {
-  "appId": "com.coreanodecalle.selektor",
-  "appName": "Selektor",
+  "appId": "com.ipduarte.vaiven",
+  "appName": "Vaivén",
   "webDir": "www",
   "server": {
     "androidScheme": "https"
   },
   "android": {
-    "backgroundColor": "#14171dff",
+    "backgroundColor": "#1d2027ff",
     "allowMixedContent": false,
     "captureInput": false,
     "webContentsDebuggingEnabled": false

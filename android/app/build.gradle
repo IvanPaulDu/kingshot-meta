@@ -1,23 +1,22 @@
 apply plugin: 'com.android.application'
 
-// Firma de release opcional: si existe android/keystore.properties (creado
-// con tools/make-keystore.sh) el APK de release sale firmado y listo para
-// instalar; si no, Gradle genera el APK sin firmar.
-def keystorePropsFile = rootProject.file('keystore.properties')
-def keystoreProps = new Properties()
-if (keystorePropsFile.exists()) {
-    keystoreProps.load(new FileInputStream(keystorePropsFile))
+// Firma de publicación opcional: si existe android/keystore.properties, creado
+// por tools/keystore.sh, el APK de release sale firmado y listo para instalar.
+def signingProps = rootProject.file('keystore.properties')
+def signingValues = new Properties()
+if (signingProps.exists()) {
+    signingValues.load(new FileInputStream(signingProps))
 }
 
 android {
-    namespace "com.coreanodecalle.selektor"
+    namespace "com.ipduarte.vaiven"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.coreanodecalle.selektor"
+        applicationId "com.ipduarte.vaiven"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 5
-        versionName "1.4.0"
+        versionCode 1
+        versionName "1.0.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -26,12 +25,12 @@ android {
         }
     }
     signingConfigs {
-        if (keystorePropsFile.exists()) {
+        if (signingProps.exists()) {
             release {
-                storeFile rootProject.file(keystoreProps['storeFile'])
-                storePassword keystoreProps['storePassword']
-                keyAlias keystoreProps['keyAlias']
-                keyPassword keystoreProps['keyPassword']
+                storeFile rootProject.file(signingValues['storeFile'])
+                storePassword signingValues['storePassword']
+                keyAlias signingValues['keyAlias']
+                keyPassword signingValues['keyPassword']
             }
         }
     }
@@ -39,7 +38,7 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            if (keystorePropsFile.exists()) {
+            if (signingProps.exists()) {
                 signingConfig signingConfigs.release
             }
         }

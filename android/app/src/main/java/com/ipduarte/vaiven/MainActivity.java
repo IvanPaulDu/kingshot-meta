@@ -1,4 +1,4 @@
-package com.coreanodecalle.selektor;
+package com.ipduarte.vaiven;
 
 import android.os.Bundle;
 import android.view.View;
@@ -11,9 +11,9 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
 
 /**
- * El juego es de pantalla completa y vertical: se ocultan las barras de
- * sistema en modo inmersivo (vuelven a aparecer al deslizar) y se impide
- * que la pantalla se apague durante la partida.
+ * El juego ocupa la pantalla entera y solo se juega en vertical: se ocultan las
+ * barras de sistema en modo inmersivo, reaparecen al deslizar, y se impide que
+ * la pantalla se apague durante la partida.
  */
 public class MainActivity extends BridgeActivity {
 
@@ -22,18 +22,18 @@ public class MainActivity extends BridgeActivity {
         super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
-        applyImmersiveMode();
+        goImmersive();
     }
 
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (hasFocus) {
-            applyImmersiveMode();
+            goImmersive();
         }
     }
 
-    private void applyImmersiveMode() {
+    private void goImmersive() {
         View decor = getWindow().getDecorView();
         WindowInsetsControllerCompat controller =
                 WindowCompat.getInsetsController(getWindow(), decor);

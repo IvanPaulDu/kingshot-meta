@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#14171d</color>
-    <color name="colorPrimaryDark">#0d0f13</color>
-    <color name="colorAccent">#f4c329</color>
-    <!-- Mismo tono que el <body> de la envoltura web, para que no haya
-         ningún destello claro entre el splash y el lienzo del juego. -->
-    <color name="splash_background">#14171d</color>
+    <color name="colorPrimary">#1d2027</color>
+    <color name="colorPrimaryDark">#141720</color>
+    <color name="colorAccent">#f2a83c</color>
+    <!-- Mismo tono que el fondo del lienzo y que el <body>, para que no haya
+         ningún salto de brillo entre el arranque y el juego. -->
+    <color name="splash_background">#1d2027</color>
 </resources>

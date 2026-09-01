@@ -1,5 +1,5 @@
 node_modules/
-.smoke/
+.shots/
 dist/
 
 # Android: artefactos de compilación y secretos de firma
